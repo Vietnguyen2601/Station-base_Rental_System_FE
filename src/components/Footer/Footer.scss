@@ -1,0 +1,147 @@
+@import '../../styles/variables';
+
+.footer {
+  background-color: $gray-800;
+  color: $gray-300;
+  padding: $spacing-16 0 $spacing-8;
+  margin-top: auto;
+
+  &__content {
+    display: grid;
+    gap: $spacing-8;
+    grid-template-columns: 1fr;
+    margin-bottom: $spacing-12;
+
+    @include responsive(sm) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include responsive(lg) {
+      grid-template-columns: 2fr 1fr 1fr 1.5fr;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    margin-bottom: $spacing-2;
+
+    &-icon {
+      color: $primary-color;
+      width: 2rem;
+      height: 2rem;
+    }
+
+    &-text {
+      font-size: $font-size-xl;
+      font-weight: 700;
+      color: $white;
+    }
+  }
+
+  &__description {
+    color: $gray-400;
+    line-height: 1.6;
+    max-width: 300px;
+  }
+
+  &__title {
+    color: $white;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    margin-bottom: $spacing-2;
+  }
+
+  &__links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+  }
+
+  &__link {
+    color: $gray-400;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  &__contact {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+
+    &-item {
+      display: flex;
+      align-items: center;
+      gap: $spacing-3;
+    }
+
+    &-icon {
+      color: $primary-color;
+      width: 1.125rem;
+      height: 1.125rem;
+      flex-shrink: 0;
+    }
+
+    &-text {
+      color: $gray-400;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+
+  &__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+    padding-top: $spacing-8;
+    border-top: 1px solid $gray-700;
+
+    @include responsive(md) {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  &__legal {
+    display: flex;
+    gap: $spacing-6;
+    flex-wrap: wrap;
+
+    &-link {
+      color: $gray-400;
+      text-decoration: none;
+      font-size: $font-size-sm;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+
+  &__copyright {
+    color: $gray-500;
+    font-size: $font-size-sm;
+    
+    p {
+      margin: 0;
+    }
+  }
+}

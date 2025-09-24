@@ -1,0 +1,67 @@
+@import '../../../styles/variables';
+
+.errorBoundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: $spacing-8;
+  background-color: $gray-50;
+  border-radius: $border-radius-lg;
+}
+
+.content {
+  text-align: center;
+  max-width: 500px;
+}
+
+.icon {
+  width: 3rem;
+  height: 3rem;
+  color: $error-color;
+  margin-bottom: $spacing-4;
+}
+
+.title {
+  font-size: $font-size-2xl;
+  font-weight: 600;
+  color: $gray-800;
+  margin-bottom: $spacing-3;
+}
+
+.message {
+  color: $gray-600;
+  margin-bottom: $spacing-6;
+  line-height: 1.6;
+}
+
+.errorDetails {
+  text-align: left;
+  margin-bottom: $spacing-6;
+  padding: $spacing-4;
+  background-color: $gray-100;
+  border-radius: $border-radius;
+  border: 1px solid $gray-200;
+
+  summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: $gray-700;
+    margin-bottom: $spacing-2;
+  }
+}
+
+.errorStack {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: $font-size-sm;
+  color: $error-color;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.retryButton {
+  @include button-primary;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+}

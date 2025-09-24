@@ -1,0 +1,689 @@
+@import '../../styles/variables';
+
+.booking {
+  min-height: 100vh;
+  background: $gray-50;
+  padding: $spacing-8 0;
+
+  &__progress-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: $spacing-12;
+  }
+
+  &__progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 $spacing-4;
+
+    &-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-2;
+      position: relative;
+
+      &.active {
+        .booking__progress-circle {
+          background-color: $primary-color;
+          color: $white;
+          border-color: $primary-color;
+        }
+
+        span {
+          color: $primary-color;
+          font-weight: 600;
+        }
+      }
+
+      &.completed {
+        .booking__progress-circle {
+          background-color: $success-color;
+          color: $white;
+          border-color: $success-color;
+        }
+
+        span {
+          color: $success-color;
+        }
+      }
+    }
+
+    &-circle {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 2px solid $gray-300;
+      background-color: $white;
+      color: $gray-500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: $font-size-sm;
+      transition: all 0.3s ease;
+    }
+
+    &-line {
+      width: 3rem;
+      height: 2px;
+      background-color: $gray-300;
+      margin: 0 $spacing-2;
+
+      @include responsive(sm) {
+        width: 4rem;
+        margin: 0 $spacing-4;
+      }
+    }
+
+    span {
+      font-size: $font-size-sm;
+      color: $gray-500;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+  }
+
+  &__content {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 $spacing-4;
+    
+    @include responsive(lg) {
+      max-width: 1200px;
+    }
+    
+    @include responsive(md) {
+      padding: 0 $spacing-6;
+    }
+  }
+
+  &__step {
+    animation: fadeIn 0.5s ease-in-out;
+    width: 100%;
+    margin: 0 auto;
+    
+    &-header {
+      text-align: center;
+      margin-bottom: $spacing-8;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    &-title {
+      font-size: $font-size-3xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: $spacing-2;
+    }
+
+    &-subtitle {
+      color: $gray-600;
+      font-size: $font-size-lg;
+    }
+  }
+
+  &__back-btn {
+    background: none;
+    border: none;
+    color: $primary-color;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: $spacing-4;
+    padding: $spacing-2 0;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $primary-dark;
+    }
+  }
+
+  &__controls {
+    display: flex;
+    gap: $spacing-4;
+    margin-bottom: $spacing-6;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: $spacing-8;
+  }
+
+  &__search {
+    flex: 1;
+    min-width: 300px;
+
+    &-input {
+      width: 100%;
+      padding: $spacing-3 $spacing-4;
+      border: 2px solid $gray-300;
+      border-radius: $border-radius;
+      font-size: $font-size-base;
+      transition: border-color 0.2s ease;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+      }
+    }
+  }
+
+  &__filter-btn {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    padding: $spacing-3 $spacing-4;
+    border: 2px solid $gray-300;
+    border-radius: $border-radius;
+    background: $white;
+    color: $gray-700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+
+  &__error {
+    background-color: rgba($error-color, 0.1);
+    border: 1px solid rgba($error-color, 0.3);
+    border-radius: $border-radius;
+    padding: $spacing-4;
+    color: $error-color;
+    margin-bottom: $spacing-6;
+    text-align: center;
+  }
+
+  // Layout for station selection content
+  .booking__step &__content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-8;
+    width: 100%;
+    max-width: none;
+
+    @include responsive(lg) {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    @include responsive(xl) {
+      grid-template-columns: 1fr 1.2fr;
+    }
+  }
+
+  &__map {
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+    overflow: hidden;
+
+    &-placeholder {
+      padding: $spacing-8;
+      text-align: center;
+      color: $gray-500;
+
+      h3 {
+        margin: $spacing-4 0 $spacing-2;
+        color: $gray-700;
+      }
+
+      p {
+        margin-bottom: $spacing-6;
+      }
+    }
+
+    &-stations {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-2;
+      justify-content: center;
+    }
+
+    &-marker {
+      display: flex;
+      align-items: center;
+      gap: $spacing-1;
+      padding: $spacing-2 $spacing-3;
+      background: $primary-color;
+      color: $white;
+      border-radius: $border-radius;
+      font-size: $font-size-sm;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: $primary-dark;
+      }
+    }
+  }
+
+  &__stations {
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+    padding: $spacing-6;
+    width: 100%;
+
+    &-title {
+      font-size: $font-size-xl;
+      font-weight: 600;
+      color: $gray-800;
+      margin-bottom: $spacing-6;
+    }
+
+    &-list {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-4;
+      max-height: 600px;
+      overflow-y: auto;
+      
+      @include responsive(lg) {
+        max-height: 700px;
+      }
+    }
+  }
+
+  &__station-card {
+    padding: $spacing-4;
+    border: 2px solid $gray-200;
+    border-radius: $border-radius;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $primary-color;
+      box-shadow: $shadow;
+    }
+  }
+
+  &__station-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $spacing-2;
+  }
+
+  &__station-name {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: $gray-800;
+    margin: 0;
+  }
+
+  &__station-availability {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    color: $success-color;
+    font-weight: 500;
+  }
+
+  &__station-address {
+    color: $gray-600;
+    margin-bottom: $spacing-3;
+  }
+
+  &__station-facilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-2;
+  }
+
+  &__facility-tag {
+    background: $gray-100;
+    color: $gray-600;
+    padding: $spacing-1 $spacing-2;
+    border-radius: $border-radius-sm;
+    font-size: $font-size-xs;
+  }
+
+  &__vehicles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: $spacing-6;
+    width: 100%;
+    
+    @include responsive(sm) {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    
+    @include responsive(lg) {
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+    
+    @include responsive(xl) {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+  }
+
+  &__vehicle-card {
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: $shadow-lg;
+    }
+  }
+
+  &__vehicle-image {
+    height: 200px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__vehicle-content {
+    padding: $spacing-4;
+  }
+
+  &__vehicle-name {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: $gray-800;
+    margin: 0 0 $spacing-1 0;
+  }
+
+  &__vehicle-model {
+    color: $gray-600;
+    margin-bottom: $spacing-3;
+  }
+
+  &__vehicle-stats {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  &__vehicle-stat {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    color: $gray-700;
+    font-weight: 500;
+  }
+
+  &__no-vehicles {
+    text-align: center;
+    padding: $spacing-12;
+    color: $gray-500;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+
+    h3 {
+      margin: $spacing-4 0 $spacing-2;
+      color: $gray-700;
+    }
+  }
+
+  &__details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-8;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    @include responsive(md) {
+      grid-template-columns: 1fr;
+      gap: $spacing-6;
+    }
+    
+    @include responsive(lg) {
+      grid-template-columns: 1fr 1fr;
+      gap: $spacing-8;
+    }
+    
+    // @include responsive(xl) {
+    //   gap: $spacing-10;
+    // }
+  }
+
+  &__details-summary {
+    background: $white;
+    padding: $spacing-6;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+
+    h3 {
+      font-size: $font-size-xl;
+      font-weight: 600;
+      color: $gray-800;
+      margin-bottom: $spacing-4;
+    }
+  }
+
+  &__summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-3 0;
+    border-bottom: 1px solid $gray-200;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    span:first-child {
+      color: $gray-600;
+    }
+
+    span:last-child {
+      font-weight: 500;
+      color: $gray-800;
+    }
+  }
+
+  &__details-form {
+    background: $white;
+    padding: $spacing-6;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow;
+  }
+
+  &__form-group {
+    margin-bottom: $spacing-4;
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: $gray-700;
+      margin-bottom: $spacing-2;
+    }
+  }
+
+  &__input {
+    width: 100%;
+    padding: $spacing-3 $spacing-4;
+    border: 2px solid $gray-300;
+    border-radius: $border-radius;
+    font-size: $font-size-base;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+
+  &__cost-breakdown {
+    margin: $spacing-6 0;
+    padding: $spacing-4;
+    background: $gray-50;
+    border-radius: $border-radius;
+
+    h4 {
+      font-size: $font-size-lg;
+      font-weight: 600;
+      color: $gray-800;
+      margin-bottom: $spacing-3;
+    }
+  }
+
+  &__cost-item {
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-2 0;
+
+    &.booking__cost-total {
+      border-top: 2px solid $gray-300;
+      margin-top: $spacing-2;
+      padding-top: $spacing-3;
+      font-weight: 600;
+      font-size: $font-size-lg;
+      color: $gray-800;
+    }
+  }
+
+  &__confirm-btn {
+    width: 100%;
+    padding: $spacing-4;
+    font-size: $font-size-lg;
+    font-weight: 600;
+  }
+
+  &__confirmation {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    width: 100%;
+    
+    @include responsive(lg) {
+      max-width: 700px;
+    }
+
+    &-header {
+      margin-bottom: $spacing-8;
+    }
+
+    &-icon {
+      width: 4rem;
+      height: 4rem;
+      color: $success-color;
+      margin-bottom: $spacing-4;
+    }
+
+    &-title {
+      font-size: $font-size-3xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: $spacing-2;
+    }
+
+    &-subtitle {
+      color: $gray-600;
+      font-size: $font-size-lg;
+    }
+
+    &-details {
+      background: $white;
+      padding: $spacing-6;
+      border-radius: $border-radius-lg;
+      box-shadow: $shadow;
+      margin-bottom: $spacing-8;
+      text-align: left;
+    }
+
+    &-code {
+      text-align: center;
+      margin-bottom: $spacing-6;
+
+      h3 {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        color: $gray-800;
+        margin-bottom: $spacing-3;
+      }
+    }
+
+    &-summary {
+      margin-bottom: $spacing-6;
+
+      h3 {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        color: $gray-800;
+        margin-bottom: $spacing-4;
+      }
+    }
+
+    &-actions {
+      display: flex;
+      gap: $spacing-4;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__code {
+    font-size: $font-size-2xl;
+    font-weight: 700;
+    color: $primary-color;
+    background: $gray-100;
+    padding: $spacing-4;
+    border-radius: $border-radius;
+    letter-spacing: 0.1em;
+  }
+
+  &__summary-grid {
+    display: grid;
+    gap: $spacing-2;
+  }
+
+  &__next-steps {
+    h3 {
+      font-size: $font-size-lg;
+      font-weight: 600;
+      color: $gray-800;
+      margin-bottom: $spacing-3;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+
+      li {
+        padding: $spacing-2 0;
+        position: relative;
+        padding-left: $spacing-6;
+
+        &::before {
+          content: '✓';
+          position: absolute;
+          left: 0;
+          color: $success-color;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,212 @@
+@import '../../../styles/variables';
+
+.register-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: $spacing-8;
+  background: $white;
+  border-radius: $border-radius-xl;
+  box-shadow: $shadow-lg;
+
+  &__header {
+    text-align: center;
+    margin-bottom: $spacing-8;
+  }
+
+  &__title {
+    font-size: $font-size-3xl;
+    font-weight: 700;
+    color: $gray-800;
+    margin-bottom: $spacing-2;
+  }
+
+  &__subtitle {
+    color: $gray-600;
+    font-size: $font-size-lg;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-6;
+  }
+
+  &__error-banner {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+    padding: $spacing-4;
+    background-color: rgba($error-color, 0.1);
+    border: 1px solid rgba($error-color, 0.3);
+    border-radius: $border-radius;
+    color: $error-color;
+    font-weight: 500;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+
+    &-title {
+      font-size: $font-size-xl;
+      font-weight: 600;
+      color: $gray-800;
+      margin-bottom: $spacing-2;
+      padding-bottom: $spacing-2;
+      border-bottom: 2px solid $gray-200;
+    }
+
+    &-description {
+      color: $gray-600;
+      font-size: $font-size-sm;
+      margin-bottom: $spacing-2;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-4;
+
+    @include responsive(md) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+  }
+
+  &__label {
+    font-weight: 600;
+    color: $gray-700;
+    font-size: $font-size-sm;
+  }
+
+  &__input {
+    padding: $spacing-3 $spacing-4;
+    border: 2px solid $gray-300;
+    border-radius: $border-radius;
+    font-size: $font-size-base;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+    }
+
+    &--error {
+      border-color: $error-color;
+      
+      &:focus {
+        border-color: $error-color;
+        box-shadow: 0 0 0 3px rgba($error-color, 0.1);
+      }
+    }
+
+    &::placeholder {
+      color: $gray-400;
+    }
+  }
+
+  &__password-field {
+    position: relative;
+  }
+
+  &__password-toggle {
+    position: absolute;
+    right: $spacing-3;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: $gray-500;
+    cursor: pointer;
+    padding: $spacing-1;
+    border-radius: $border-radius-sm;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  &__error {
+    color: $error-color;
+    font-size: $font-size-sm;
+    font-weight: 500;
+  }
+
+  &__file-upload {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+  }
+
+  &__file-input {
+    display: none;
+  }
+
+  &__file-label {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+    padding: $spacing-4;
+    border: 2px dashed $gray-300;
+    border-radius: $border-radius;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: $gray-50;
+
+    &:hover {
+      border-color: $primary-color;
+      background-color: rgba($primary-color, 0.05);
+    }
+
+    span {
+      color: $gray-600;
+      font-weight: 500;
+    }
+  }
+
+  &__file-success {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    color: $success-color;
+    font-size: $font-size-sm;
+    font-weight: 500;
+  }
+
+  &__actions {
+    margin-top: $spacing-4;
+  }
+
+  &__submit-btn {
+    width: 100%;
+    padding: $spacing-4;
+    font-size: $font-size-lg;
+    font-weight: 600;
+  }
+
+  &__terms {
+    text-align: center;
+    font-size: $font-size-sm;
+    color: $gray-600;
+    line-height: 1.5;
+  }
+
+  &__link {
+    color: $primary-color;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

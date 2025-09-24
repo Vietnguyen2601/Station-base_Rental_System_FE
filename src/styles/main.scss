@@ -1,0 +1,102 @@
+// Main SCSS entry point
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'variables';
+
+// Global Styles
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+body {
+  font-family: $font-family-primary;
+  color: $gray-700;
+  background-color: $gray-50;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Utility Classes
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 $spacing-4;
+  
+  @include responsive(md) {
+    padding: 0 $spacing-6;
+  }
+}
+
+.btn {
+  &-primary {
+    @include button-primary;
+  }
+  
+  &-secondary {
+    @include button-secondary;
+  }
+  
+  &-outline {
+    @include button-base;
+    background-color: transparent;
+    color: $primary-color;
+    border: 2px solid $primary-color;
+    
+    &:hover:not(:disabled) {
+      background-color: $primary-color;
+      color: $white;
+    }
+  }
+}
+
+.text {
+  &-xs { font-size: $font-size-xs; }
+  &-sm { font-size: $font-size-sm; }
+  &-base { font-size: $font-size-base; }
+  &-lg { font-size: $font-size-lg; }
+  &-xl { font-size: $font-size-xl; }
+  &-2xl { font-size: $font-size-2xl; }
+  &-3xl { font-size: $font-size-3xl; }
+}
+
+.font {
+  &-light { font-weight: 300; }
+  &-normal { font-weight: 400; }
+  &-medium { font-weight: 500; }
+  &-semibold { font-weight: 600; }
+  &-bold { font-weight: 700; }
+}
+
+.grid {
+  display: grid;
+  gap: $spacing-6;
+  
+  &-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  &-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  &-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  
+  @include responsive(md) {
+    &-md-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    &-md-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  
+  @include responsive(lg) {
+    &-lg-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    &-lg-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

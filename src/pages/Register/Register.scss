@@ -1,0 +1,307 @@
+@import '../../styles/variables';
+
+.register {
+  min-height: 100vh;
+  background: linear-gradient(135deg, $gray-50 0%, $gray-100 100%);
+  padding: $spacing-8 0;
+
+  &__content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  &__progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: $spacing-12;
+    padding: 0 $spacing-4;
+
+    &-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-2;
+      position: relative;
+
+      &.active {
+        .register__progress-circle {
+          background-color: $primary-color;
+          color: $white;
+          border-color: $primary-color;
+        }
+
+        .register__progress-label {
+          color: $primary-color;
+          font-weight: 600;
+        }
+      }
+
+      &.completed {
+        .register__progress-circle {
+          background-color: $success-color;
+          color: $white;
+          border-color: $success-color;
+        }
+
+        .register__progress-label {
+          color: $success-color;
+        }
+      }
+    }
+
+    &-circle {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: 2px solid $gray-300;
+      background-color: $white;
+      color: $gray-500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: $font-size-sm;
+      transition: all 0.3s ease;
+    }
+
+    &-label {
+      font-size: $font-size-sm;
+      color: $gray-500;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    &-line {
+      width: 4rem;
+      height: 2px;
+      background-color: $gray-300;
+      margin: 0 $spacing-4;
+
+      @include responsive(sm) {
+        width: 6rem;
+      }
+    }
+  }
+
+  &__step {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  &__verification {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: $spacing-8;
+    background: $white;
+    border-radius: $border-radius-xl;
+    box-shadow: $shadow-lg;
+    text-align: center;
+
+    &-header {
+      margin-bottom: $spacing-8;
+    }
+
+    &-icon {
+      width: 4rem;
+      height: 4rem;
+      color: $success-color;
+      margin-bottom: $spacing-4;
+    }
+
+    &-title {
+      font-size: $font-size-3xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: $spacing-3;
+    }
+
+    &-subtitle {
+      color: $gray-600;
+      font-size: $font-size-lg;
+      line-height: 1.6;
+    }
+
+    &-form {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-6;
+    }
+
+    &-field {
+      text-align: left;
+    }
+
+    &-input {
+      width: 100%;
+      padding: $spacing-4;
+      border: 2px solid $gray-300;
+      border-radius: $border-radius;
+      font-size: $font-size-xl;
+      text-align: center;
+      letter-spacing: 0.5em;
+      font-weight: 600;
+      transition: all 0.2s ease;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+      }
+    }
+
+    &-actions {
+      margin-top: $spacing-4;
+    }
+
+    &-text {
+      color: $gray-600;
+      font-size: $font-size-sm;
+    }
+  }
+
+  &__status {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: $spacing-8;
+    background: $white;
+    border-radius: $border-radius-xl;
+    box-shadow: $shadow-lg;
+    text-align: center;
+
+    &-header {
+      margin-bottom: $spacing-8;
+    }
+
+    &-icon {
+      width: 4rem;
+      height: 4rem;
+      margin-bottom: $spacing-4;
+
+      &--pending {
+        color: $warning-color;
+      }
+
+      &--approved {
+        color: $success-color;
+      }
+
+      &--rejected {
+        color: $error-color;
+      }
+    }
+
+    &-title {
+      font-size: $font-size-3xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: $spacing-3;
+    }
+
+    &-subtitle {
+      color: $gray-600;
+      font-size: $font-size-lg;
+      line-height: 1.6;
+    }
+
+    &-details {
+      text-align: left;
+      margin-bottom: $spacing-8;
+
+      &-title {
+        font-size: $font-size-xl;
+        font-weight: 600;
+        color: $gray-800;
+        margin-bottom: $spacing-4;
+      }
+    }
+
+    &-list {
+      list-style: none;
+      padding: 0;
+
+      li {
+        padding: $spacing-3 0;
+        border-bottom: 1px solid $gray-200;
+        color: $gray-600;
+        position: relative;
+        padding-left: $spacing-6;
+
+        &::before {
+          content: '✓';
+          position: absolute;
+          left: 0;
+          color: $success-color;
+          font-weight: bold;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+
+    &-actions {
+      display: flex;
+      gap: $spacing-4;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__error-banner {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+    padding: $spacing-4;
+    background-color: rgba($error-color, 0.1);
+    border: 1px solid rgba($error-color, 0.3);
+    border-radius: $border-radius;
+    color: $error-color;
+    font-weight: 500;
+    text-align: left;
+  }
+
+  &__label {
+    font-weight: 600;
+    color: $gray-700;
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-2;
+    display: block;
+  }
+
+  &__submit-btn {
+    width: 100%;
+    padding: $spacing-4;
+    font-size: $font-size-lg;
+    font-weight: 600;
+  }
+
+  &__link-btn {
+    background: none;
+    border: none;
+    color: $primary-color;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      color: $primary-dark;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
