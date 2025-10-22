@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { LoginFormProps, LoginCredentials } from '../../../types';
+import authService, { ApiError } from '../../../services/authService';
 import './LoginForm.scss';
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
@@ -11,12 +12,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   error 
 }) => {
   const [credentials, setCredentials] = useState<LoginCredentials>({
-    email: '',
+    username: '',
     password: '',
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,12 +39,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!credentials.email) {
-      errors.email = 'Email là bắt buộc';
-    } else if (!emailRegex.test(credentials.email)) {
-      errors.email = 'Vui lòng nhập email hợp lệ';
+    // Username validation
+    if (!credentials.username.trim()) {
+      errors.username = 'Username là bắt buộc';
+    } else if (credentials.username.length < 3) {
+      errors.username = 'Username phải có ít nhất 3 ký tự';
     }
 
     // Password validation
@@ -56,11 +58,42 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     
-    if (validateForm()) {
-      onSubmit(credentials);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const response = await authService.login({
+        username: credentials.username,
+        password: credentials.password
+      });
+
+      // Save user data
+      authService.saveCurrentUser(response.user);
+      
+      // Call parent onSubmit with user data
+      onSubmit({
+        ...credentials,
+        user: response.user
+      } as any);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error instanceof Error) {
+        setSubmitError(error.message);
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        setSubmitError((error as ApiError).message);
+      } else {
+        setSubmitError('Đăng nhập thất bại. Vui lòng thử lại.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,48 +108,32 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
       <form onSubmit={handleSubmit} className="login-form__form">
         {/* Global Error Message */}
-        {error && (
+        {(error || submitError) && (
           <div className="login-form__error-banner">
             <AlertCircle size={20} />
-            <span>{error}</span>
+            <span>{error || submitError}</span>
           </div>
         )}
 
-        {/* Demo Accounts Info */}
-        <div className="login-form__demo-info">
-          <h4>Tài khoản demo:</h4>
-          <div className="login-form__demo-accounts">
-            <div className="login-form__demo-account">
-              <strong>Khách hàng:</strong> customer@evrental.com / 123456
-            </div>
-            <div className="login-form__demo-account">
-              <strong>Nhân viên:</strong> staff@evrental.com / 123456
-            </div>
-            <div className="login-form__demo-account">
-              <strong>Quản trị:</strong> admin@evrental.com / 123456
-            </div>
-          </div>
-        </div>
-
-        {/* Email Field */}
+        {/* Username Field */}
         <div className="login-form__field">
-          <label htmlFor="email" className="login-form__label">
-            Email *
+          <label htmlFor="username" className="login-form__label">
+            Username *
           </label>
           <div className="login-form__input-wrapper">
-            <Mail className="login-form__input-icon" />
+            <User className="login-form__input-icon" />
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={credentials.email}
+              type="text"
+              id="username"
+              name="username"
+              value={credentials.username}
               onChange={handleInputChange}
-              className={`login-form__input ${validationErrors.email ? 'login-form__input--error' : ''}`}
-              placeholder="Nhập địa chỉ email của bạn"
+              className={`login-form__input ${validationErrors.username ? 'login-form__input--error' : ''}`}
+              placeholder="Nhập username của bạn"
             />
           </div>
-          {validationErrors.email && (
-            <span className="login-form__error">{validationErrors.email}</span>
+          {validationErrors.username && (
+            <span className="login-form__error">{validationErrors.username}</span>
           )}
         </div>
 
@@ -173,10 +190,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isSubmitting}
           className="login-form__submit-btn btn btn-primary"
         >
-          {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+          {(isLoading || isSubmitting) ? 'Đang đăng nhập...' : 'Đăng Nhập'}
         </button>
 
         {/* Register Link */}

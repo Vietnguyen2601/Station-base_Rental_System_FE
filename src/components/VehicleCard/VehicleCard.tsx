@@ -1,11 +1,11 @@
 import React from 'react';
-import { Battery, Car, Clock, DollarSign, MapPin } from 'lucide-react';
+import { Battery, Zap, MapPin, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { VehicleCardProps } from '../../types';
 import './VehicleCard.scss';
 
 const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onRentVehicle, userRole }) => {
   const getBatteryColor = () => {
-    if (vehicle.batteryLevel > 60) return 'success';
+    if (vehicle.batteryLevel > 70) return 'success';
     if (vehicle.batteryLevel > 30) return 'warning';
     return 'error';
   };
@@ -15,9 +15,9 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onRentVehicle, userR
       case 'available':
         return 'success';
       case 'charging':
-        return 'warning';
+        return 'info';
       case 'rented':
-        return 'error';
+        return 'warning';
       case 'maintenance':
         return 'error';
       default:
@@ -28,106 +28,117 @@ const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onRentVehicle, userR
   const getStatusText = () => {
     switch (vehicle.status) {
       case 'available':
-        return 'Available';
+        return 'Có sẵn';
       case 'charging':
-        return 'Charging';
+        return 'Đang sạc';
       case 'rented':
-        return 'Rented';
+        return 'Đang thuê';
       case 'maintenance':
-        return 'Maintenance';
+        return 'Bảo trì';
       default:
-        return 'Unknown';
+        return 'Không rõ';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (vehicle.status) {
+      case 'available':
+        return <CheckCircle size={14} />;
+      case 'charging':
+        return <Zap size={14} />;
+      case 'rented':
+        return <Clock size={14} />;
+      case 'maintenance':
+        return <AlertCircle size={14} />;
+      default:
+        return <AlertCircle size={14} />;
     }
   };
 
   const canRent = vehicle.status === 'available' && vehicle.batteryLevel > 20;
 
   return (
-    <div className="vehicle-card fade-in">
-      {vehicle.imageUrl && (
-        <div className="vehicle-card__image">
-          <img src={vehicle.imageUrl} alt={vehicle.name} />
+    <div className="vehicle-card">
+      <div className="vehicle-card__image-wrapper">
+        {vehicle.imageUrl ? (
+          <img src={vehicle.imageUrl} alt={vehicle.name} className="vehicle-card__image" />
+        ) : (
+          <div className="vehicle-card__image-placeholder">
+            <Zap size={48} />
+          </div>
+        )}
+        <div className={`vehicle-card__status-badge vehicle-card__status-badge--${getStatusColor()}`}>
+          {getStatusIcon()}
+          <span>{getStatusText()}</span>
         </div>
-      )}
+      </div>
 
       <div className="vehicle-card__content">
         <div className="vehicle-card__header">
-          <div className="vehicle-card__title-section">
-            <h3 className="vehicle-card__title">{vehicle.name}</h3>
-            <span className="vehicle-card__model">{vehicle.model}</span>
-          </div>
-          <div className={`vehicle-card__status vehicle-card__status--${getStatusColor()}`}>
-            {getStatusText()}
-          </div>
+          <h3 className="vehicle-card__title">{vehicle.name}</h3>
+          <p className="vehicle-card__model">{vehicle.model}</p>
         </div>
 
-        <div className="vehicle-card__stats">
-          <div className="vehicle-card__stat">
-            <Battery className="vehicle-card__stat-icon" />
-            <div className="vehicle-card__stat-content">
-              <span className="vehicle-card__stat-label">Battery</span>
-              <div className="vehicle-card__battery">
+        <div className="vehicle-card__details">
+          {/* Battery Level */}
+          <div className="vehicle-card__detail">
+            <div className="vehicle-card__detail-header">
+              <Battery size={16} className="vehicle-card__detail-icon" />
+              <span className="vehicle-card__detail-label">Mức pin</span>
+            </div>
+            <div className="vehicle-card__battery-bar-wrapper">
+              <div className="vehicle-card__battery-bar">
                 <div 
-                  className={`vehicle-card__battery-bar vehicle-card__battery-bar--${getBatteryColor()}`}
+                  className={`vehicle-card__battery-fill vehicle-card__battery-fill--${getBatteryColor()}`}
                   style={{ width: `${vehicle.batteryLevel}%` }}
                 />
-                <span className={`vehicle-card__battery-text vehicle-card__battery-text--${getBatteryColor()}`}>
-                  {vehicle.batteryLevel}%
-                </span>
               </div>
-            </div>
-          </div>
-
-          <div className="vehicle-card__stat">
-            <MapPin className="vehicle-card__stat-icon" />
-            <div className="vehicle-card__stat-content">
-              <span className="vehicle-card__stat-label">Location</span>
-              <span className="vehicle-card__stat-value">{vehicle.location}</span>
-            </div>
-          </div>
-
-          <div className="vehicle-card__stat">
-            <DollarSign className="vehicle-card__stat-icon" />
-            <div className="vehicle-card__stat-content">
-              <span className="vehicle-card__stat-label">Rate</span>
-              <span className="vehicle-card__stat-value">
-                ${vehicle.pricePerHour}/hour
+              <span className={`vehicle-card__battery-value vehicle-card__battery-value--${getBatteryColor()}`}>
+                {vehicle.batteryLevel}%
               </span>
             </div>
           </div>
+
+          {/* Location */}
+          <div className="vehicle-card__detail">
+            <div className="vehicle-card__detail-header">
+              <MapPin size={16} className="vehicle-card__detail-icon" />
+              <span className="vehicle-card__detail-label">Vị trí</span>
+            </div>
+            <span className="vehicle-card__detail-value">{vehicle.location}</span>
+          </div>
+
+          {/* Price */}
+          <div className="vehicle-card__detail vehicle-card__detail--price">
+            <div className="vehicle-card__price">
+              <span className="vehicle-card__price-amount">{vehicle.pricePerHour.toLocaleString('vi-VN')}đ</span>
+              <span className="vehicle-card__price-unit">/giờ</span>
+            </div>
+          </div>
         </div>
 
+        {/* Action Button */}
         <div className="vehicle-card__actions">
-          {userRole === 'renter' && (
+          {(userRole === 'customer' || !userRole) && (
             <button
               onClick={() => onRentVehicle(vehicle)}
-              className="btn btn-primary vehicle-card__rent-btn"
+              className={`vehicle-card__btn ${canRent ? 'vehicle-card__btn--primary' : 'vehicle-card__btn--disabled'}`}
               disabled={!canRent}
             >
-              {canRent ? 'Rent Now' : 'Not Available'}
+              {canRent ? 'Thuê ngay' : 'Không khả dụng'}
             </button>
           )}
 
           {userRole === 'staff' && (
-            <div className="vehicle-card__staff-actions">
-              <button className="btn btn-secondary vehicle-card__manage-btn">
-                Manage
-              </button>
-              <button className="btn btn-outline vehicle-card__details-btn">
-                Details
-              </button>
-            </div>
+            <button className="vehicle-card__btn vehicle-card__btn--secondary">
+              Quản lý
+            </button>
           )}
 
           {userRole === 'admin' && (
-            <div className="vehicle-card__admin-actions">
-              <button className="btn btn-secondary vehicle-card__edit-btn">
-                Edit
-              </button>
-              <button className="btn btn-outline vehicle-card__analytics-btn">
-                Analytics
-              </button>
-            </div>
+            <button className="vehicle-card__btn vehicle-card__btn--secondary">
+              Chỉnh sửa
+            </button>
           )}
         </div>
       </div>

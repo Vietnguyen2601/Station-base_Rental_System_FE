@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
-import { Upload, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { RegisterFormProps, RegistrationData } from '../../../types';
+import authService, { ApiError } from '../../../services/authService';
 import './RegisterForm.scss';
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error }) => {
   const [formData, setFormData] = useState<RegistrationData>({
-    email: '',
+    username: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
+    email: '',
+    contactNumber: '',
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [uploadedFiles, setUploadedFiles] = useState<{
-    license?: File;
-    id?: File;
-  }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,89 +30,48 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
     }
   };
 
-  // Handle file uploads
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'license' | 'id') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        setValidationErrors(prev => ({
-          ...prev,
-          [type]: 'Please upload a valid image (JPG, PNG) or PDF file'
-        }));
-        return;
-      }
-
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        setValidationErrors(prev => ({
-          ...prev,
-          [type]: 'File size must be less than 5MB'
-        }));
-        return;
-      }
-
-      setUploadedFiles(prev => ({ ...prev, [type]: file }));
-      setFormData(prev => ({ ...prev, [`${type}File`]: file }));
-      
-      // Clear validation error
-      if (validationErrors[type]) {
-        setValidationErrors(prev => ({ ...prev, [type]: '' }));
-      }
-    }
-  };
 
   // Form validation
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
+    // Username validation
+    if (!formData.username.trim()) {
+      errors.username = 'Username là bắt buộc';
+    } else if (formData.username.length < 3) {
+      errors.username = 'Username phải có ít nhất 3 ký tự';
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
-      errors.email = 'Email is required';
+      errors.email = 'Email là bắt buộc';
     } else if (!emailRegex.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = 'Vui lòng nhập email hợp lệ';
     }
 
     // Password validation
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Mật khẩu là bắt buộc';
     } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters long';
+      errors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      errors.password = 'Password must contain uppercase, lowercase, and number';
+      errors.password = 'Mật khẩu phải chứa chữ hoa, chữ thường và số';
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
+      errors.confirmPassword = 'Xác nhận mật khẩu là bắt buộc';
     } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = 'Mật khẩu xác nhận không khớp';
     }
 
-    // Name validation
-    if (!formData.firstName.trim()) {
-      errors.firstName = 'First name is required';
-    }
-    if (!formData.lastName.trim()) {
-      errors.lastName = 'Last name is required';
-    }
-
-    // Phone validation
-    const phoneRegex = /^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/;
-    if (!formData.phone) {
-      errors.phone = 'Phone number is required';
-    } else if (!phoneRegex.test(formData.phone)) {
-      errors.phone = 'Please enter a valid phone number';
-    }
-
-    // File validation
-    if (!uploadedFiles.license) {
-      errors.license = 'Driver\'s license is required';
-    }
-    if (!uploadedFiles.id) {
-      errors.id = 'Government ID is required';
+    // Contact number validation
+    const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+    if (!formData.contactNumber) {
+      errors.contactNumber = 'Số điện thoại là bắt buộc';
+    } else if (!phoneRegex.test(formData.contactNumber)) {
+      errors.contactNumber = 'Vui lòng nhập số điện thoại hợp lệ';
     }
 
     setValidationErrors(errors);
@@ -122,11 +79,42 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     
-    if (validateForm()) {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const response = await authService.register({
+        username: formData.username,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        email: formData.email,
+        contactNumber: formData.contactNumber
+      });
+
+      // Save user data
+      authService.saveCurrentUser(response.user);
+      
+      // Call parent onSubmit with user data
       onSubmit(formData);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      if (error instanceof Error) {
+        setSubmitError(error.message);
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        setSubmitError((error as ApiError).message);
+      } else {
+        setSubmitError('Đăng ký thất bại. Vui lòng thử lại.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -141,53 +129,31 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
 
       <form onSubmit={handleSubmit} className="register-form__form">
         {/* Global Error Message */}
-        {error && (
+        {(error || submitError) && (
           <div className="register-form__error-banner">
             <AlertCircle size={20} />
-            <span>{error}</span>
+            <span>{error || submitError}</span>
           </div>
         )}
 
-        {/* Personal Information */}
+        {/* Registration Form */}
         <div className="register-form__section">
-          <h3 className="register-form__section-title">Personal Information</h3>
-          
-          <div className="register-form__row">
-            <div className="register-form__field">
-              <label htmlFor="firstName" className="register-form__label">
-                First Name *
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className={`register-form__input ${validationErrors.firstName ? 'register-form__input--error' : ''}`}
-                placeholder="Enter your first name"
-              />
-              {validationErrors.firstName && (
-                <span className="register-form__error">{validationErrors.firstName}</span>
-              )}
-            </div>
-
-            <div className="register-form__field">
-              <label htmlFor="lastName" className="register-form__label">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className={`register-form__input ${validationErrors.lastName ? 'register-form__input--error' : ''}`}
-                placeholder="Enter your last name"
-              />
-              {validationErrors.lastName && (
-                <span className="register-form__error">{validationErrors.lastName}</span>
-              )}
-            </div>
+          <div className="register-form__field">
+            <label htmlFor="username" className="register-form__label">
+              Username *
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className={`register-form__input ${validationErrors.username ? 'register-form__input--error' : ''}`}
+              placeholder="Enter your username"
+            />
+            {validationErrors.username && (
+              <span className="register-form__error">{validationErrors.username}</span>
+            )}
           </div>
 
           <div className="register-form__field">
@@ -208,29 +174,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
             )}
           </div>
 
-          <div className="register-form__field">
-            <label htmlFor="phone" className="register-form__label">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className={`register-form__input ${validationErrors.phone ? 'register-form__input--error' : ''}`}
-              placeholder="Enter your phone number"
-            />
-            {validationErrors.phone && (
-              <span className="register-form__error">{validationErrors.phone}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Password Section */}
-        <div className="register-form__section">
-          <h3 className="register-form__section-title">Security</h3>
-          
           <div className="register-form__field">
             <label htmlFor="password" className="register-form__label">
               Password *
@@ -284,71 +227,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
               <span className="register-form__error">{validationErrors.confirmPassword}</span>
             )}
           </div>
-        </div>
 
-        {/* Document Upload Section */}
-        <div className="register-form__section">
-          <h3 className="register-form__section-title">Document Verification</h3>
-          <p className="register-form__section-description">
-            Please upload clear photos or scans of your documents for verification
-          </p>
-
-          <div className="register-form__row">
-            <div className="register-form__field">
-              <label className="register-form__label">Driver's License *</label>
-              <div className="register-form__file-upload">
-                <input
-                  type="file"
-                  id="license"
-                  accept="image/*,.pdf"
-                  onChange={(e) => handleFileUpload(e, 'license')}
-                  className="register-form__file-input"
-                />
-                <label htmlFor="license" className="register-form__file-label">
-                  <Upload size={20} />
-                  <span>
-                    {uploadedFiles.license ? uploadedFiles.license.name : 'Upload License'}
-                  </span>
-                </label>
-                {uploadedFiles.license && (
-                  <div className="register-form__file-success">
-                    <CheckCircle size={16} />
-                    <span>File uploaded successfully</span>
-                  </div>
-                )}
-              </div>
-              {validationErrors.license && (
-                <span className="register-form__error">{validationErrors.license}</span>
-              )}
-            </div>
-
-            <div className="register-form__field">
-              <label className="register-form__label">Government ID *</label>
-              <div className="register-form__file-upload">
-                <input
-                  type="file"
-                  id="id"
-                  accept="image/*,.pdf"
-                  onChange={(e) => handleFileUpload(e, 'id')}
-                  className="register-form__file-input"
-                />
-                <label htmlFor="id" className="register-form__file-label">
-                  <Upload size={20} />
-                  <span>
-                    {uploadedFiles.id ? uploadedFiles.id.name : 'Upload ID'}
-                  </span>
-                </label>
-                {uploadedFiles.id && (
-                  <div className="register-form__file-success">
-                    <CheckCircle size={16} />
-                    <span>File uploaded successfully</span>
-                  </div>
-                )}
-              </div>
-              {validationErrors.id && (
-                <span className="register-form__error">{validationErrors.id}</span>
-              )}
-            </div>
+          <div className="register-form__field">
+            <label htmlFor="contactNumber" className="register-form__label">
+              Contact Number *
+            </label>
+            <input
+              type="tel"
+              id="contactNumber"
+              name="contactNumber"
+              value={formData.contactNumber}
+              onChange={handleInputChange}
+              className={`register-form__input ${validationErrors.contactNumber ? 'register-form__input--error' : ''}`}
+              placeholder="Enter your contact number"
+            />
+            {validationErrors.contactNumber && (
+              <span className="register-form__error">{validationErrors.contactNumber}</span>
+            )}
           </div>
         </div>
 
@@ -356,10 +251,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
         <div className="register-form__actions">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
             className="register-form__submit-btn btn btn-primary"
           >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
+            {(isLoading || isSubmitting) ? 'Creating Account...' : 'Create Account'}
           </button>
         </div>
 

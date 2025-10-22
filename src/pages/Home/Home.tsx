@@ -1,123 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, MapPin, Battery, Clock, TrendingUp } from 'lucide-react';
-import StationCard from '../../components/StationCard/StationCard';
-import VehicleCard from '../../components/VehicleCard/VehicleCard';
-import { Station, Vehicle, User } from '../../types';
+import NewVehicleCard from '../../components/NewVehicleCard/NewVehicleCard';
+import Navbar from '../../components/Navbar/Navbar';
+import { User, Vehicle as NewVehicle, NewVehicleCardData } from '../../types';
+import { mockVehicles, mockVehicleModels, mockVehicleTypes } from '../../utils/vehicleMockData';
 import './Home.scss';
 
-// Mock data - In a real app, this would come from an API
-const mockStations: Station[] = [
-  {
-    id: '1',
-    name: 'Downtown Hub',
-    address: '123 Main Street, Downtown',
-    coordinates: { lat: 40.7128, lng: -74.0060 },
-    availableVehicles: 8,
-    totalVehicles: 12,
-    status: 'active',
-    facilities: ['Fast Charging', 'Parking', '24/7 Access', 'WiFi']
-  },
-  {
-    id: '2',
-    name: 'Airport Terminal',
-    address: '456 Airport Blvd, Terminal B',
-    coordinates: { lat: 40.6892, lng: -74.1745 },
-    availableVehicles: 3,
-    totalVehicles: 15,
-    status: 'active',
-    facilities: ['Fast Charging', 'Covered Parking', 'Security']
-  },
-  {
-    id: '3',
-    name: 'University Campus',
-    address: '789 College Ave, Campus Center',
-    coordinates: { lat: 40.7282, lng: -74.0776 },
-    availableVehicles: 0,
-    totalVehicles: 8,
-    status: 'maintenance',
-    facilities: ['Standard Charging', 'Student Discounts', 'Bike Racks']
-  }
-];
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: '1',
-    name: 'Tesla Model 3',
-    model: '2023 Standard Range',
-    batteryLevel: 85,
-    status: 'available',
-    location: 'Downtown Hub',
-    pricePerHour: 25,
-    imageUrl: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400'
-  },
-  {
-    id: '2',
-    name: 'Nissan Leaf',
-    model: '2022 Plus',
-    batteryLevel: 92,
-    status: 'available',
-    location: 'Airport Terminal',
-    pricePerHour: 20,
-    imageUrl: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400'
-  },
-  {
-    id: '3',
-    name: 'BMW i3',
-    model: '2023 eDrive40',
-    batteryLevel: 15,
-    status: 'charging',
-    location: 'Downtown Hub',
-    pricePerHour: 30,
-    imageUrl: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400'
-  },
-  {
-    id: '4',
-    name: 'Hyundai Kona EV',
-    model: '2023 Ultimate',
-    batteryLevel: 78,
-    status: 'rented',
-    location: 'University Campus',
-    pricePerHour: 22
-  }
-];
 
 interface HomeProps {
   user?: User;
+  onLogin?: () => void;
+  onRegister?: () => void;
+  onViewVehicleDetail?: (vehicleId: string) => void;
 }
 
-const Home: React.FC<HomeProps> = ({ user }) => {
-  if (!user) return null;
+const Home: React.FC<HomeProps> = ({ user, onLogin, onRegister, onViewVehicleDetail }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
-  const [filteredStations, setFilteredStations] = useState<Station[]>(mockStations);
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredStations(mockStations);
-    } else {
-      const filtered = mockStations.filter(station =>
-        station.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        station.address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredStations(filtered);
-    }
-  }, [searchQuery]);
+  // Convert new vehicle format to NewVehicleCardData format
+  const convertToNewVehicleCardData = (vehicle: NewVehicle): NewVehicleCardData => {
+    const model = mockVehicleModels.find(m => m.vehicle_model_id === vehicle.model_id);
+    const type = model ? mockVehicleTypes.find(t => t.vehicle_type_id === model.type_id) : undefined;
 
-  const handleSelectStation = (station: Station) => {
-    setSelectedStation(station);
+    return {
+      vehicle_id: vehicle.vehicle_id,
+      name: model ? `${model.manufacturer} ${model.name}` : 'Unknown Vehicle',
+      price_per_hour: model?.price_per_hour || 0,
+      battery_capacity: vehicle.battery_capacity || 0,
+      range: vehicle.range || 0,
+      type_name: type?.type_name || 'Unknown Type',
+      status: vehicle.status,
+      img: vehicle.img,
+      battery_level: vehicle.battery_level,
+      color: vehicle.color
+    };
   };
 
-  const handleRentVehicle = (vehicle: Vehicle) => {
+  // Get available vehicles for display
+  const displayVehicles = useMemo(() => {
+    return mockVehicles
+      .filter(v => v.isActive)
+      .slice(0, 4)
+      .map(convertToNewVehicleCardData);
+  }, []);
+
+
+  const handleRentVehicle = (vehicle: NewVehicleCardData) => {
     alert(`Rental process started for ${vehicle.name}`);
   };
 
-  const availableStations = mockStations.filter(s => s.status === 'active').length;
-  const totalVehicles = mockStations.reduce((sum, s) => sum + s.totalVehicles, 0);
-  const availableVehicles = mockStations.reduce((sum, s) => sum + s.availableVehicles, 0);
+  const handleViewVehicleDetail = (vehicle: NewVehicleCardData) => {
+    console.log('Home handleViewVehicleDetail called with vehicle:', vehicle);
+    console.log('onViewVehicleDetail prop:', onViewVehicleDetail);
+    if (onViewVehicleDetail) {
+      console.log('Calling onViewVehicleDetail with vehicle_id:', vehicle.vehicle_id);
+      onViewVehicleDetail(vehicle.vehicle_id);
+    } else {
+      console.log('onViewVehicleDetail is not provided');
+    }
+  };
+
+  const totalVehicles = mockVehicles.filter(v => v.isActive).length;
+  const availableVehicles = mockVehicles.filter(v => v.isActive && v.status === 'AVAILABLE').length;
 
   return (
     <div className="home">
+      {/* Navbar for unauthenticated users */}
+      {!user && onLogin && onRegister && (
+        <Navbar onLogin={onLogin} onRegister={onRegister} />
+      )}
+
       {/* Hero Section */}
       <section className="home__hero">
         <div className="container">
@@ -147,17 +100,17 @@ const Home: React.FC<HomeProps> = ({ user }) => {
             {/* Quick Stats */}
             <div className="home__stats">
               <div className="home__stat">
-                <MapPin className="home__stat-icon" />
-                <div className="home__stat-content">
-                  <span className="home__stat-number">{availableStations}</span>
-                  <span className="home__stat-label">Active Stations</span>
-                </div>
-              </div>
-              <div className="home__stat">
                 <Battery className="home__stat-icon" />
                 <div className="home__stat-content">
                   <span className="home__stat-number">{availableVehicles}</span>
                   <span className="home__stat-label">Available Vehicles</span>
+                </div>
+              </div>
+              <div className="home__stat">
+                <TrendingUp className="home__stat-icon" />
+                <div className="home__stat-content">
+                  <span className="home__stat-number">{totalVehicles}</span>
+                  <span className="home__stat-label">Total Fleet</span>
                 </div>
               </div>
               <div className="home__stat">
@@ -168,10 +121,10 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                 </div>
               </div>
               <div className="home__stat">
-                <TrendingUp className="home__stat-icon" />
+                <MapPin className="home__stat-icon" />
                 <div className="home__stat-content">
-                  <span className="home__stat-number">{totalVehicles}</span>
-                  <span className="home__stat-label">Total Fleet</span>
+                  <span className="home__stat-number">3</span>
+                  <span className="home__stat-label">Active Stations</span>
                 </div>
               </div>
             </div>
@@ -179,63 +132,60 @@ const Home: React.FC<HomeProps> = ({ user }) => {
         </div>
       </section>
 
+
       {/* Main Content */}
       <section className="home__content">
         <div className="container">
           {/* User Role Based Content */}
-          {user.role === 'customer' && (
+          {user && user.role === 'customer' && (
             <div className="home__section">
-              <h2 className="home__section-title">Tìm chuyến xe hoàn hảo</h2>
+              <h2 className="home__section-title">Tìm xe hoàn hảo</h2>
               <p className="home__section-subtitle">
-                Duyệt qua các trạm và xe có sẵn trong khu vực của bạn
+                Duyệt qua các xe có sẵn và chọn trạm phù hợp
               </p>
             </div>
           )}
 
-          {user.role === 'staff' && (
+          {user && user.role === 'staff' && (
             <div className="home__section">
-              <h2 className="home__section-title">Bảng điều khiển quản lý trạm</h2>
+              <h2 className="home__section-title">Bảng điều khiển quản lý</h2>
               <p className="home__section-subtitle">
                 Giám sát và quản lý xe tại các trạm được phân công
               </p>
             </div>
           )}
 
-          {user.role === 'admin' && (
+          {user && user.role === 'admin' && (
             <div className="home__section">
               <h2 className="home__section-title">Tổng quan hệ thống</h2>
               <p className="home__section-subtitle">
-                Tầm nhìn toàn diện về tất cả các trạm và hoạt động đội xe
+                Tầm nhìn toàn diện về hoạt động đội xe
               </p>
             </div>
           )}
 
-          {/* Stations Grid */}
-          <div className="home__stations">
-            <h3 className="home__subsection-title">
-              {searchQuery ? `Kết quả tìm kiếm (${filteredStations.length})` : 'Trạm có sẵn'}
-            </h3>
-            <div className="grid grid-cols-1 grid-md-cols-2 grid-lg-cols-3">
-              {filteredStations.map((station) => (
-                <StationCard
-                  key={station.id}
-                  station={station}
-                  onSelectStation={handleSelectStation}
-                />
-              ))}
+          {/* Public content for unauthenticated users */}
+          {!user && (
+            <div className="home__section">
+              <h2 className="home__section-title">Khám phá dịch vụ của chúng tôi</h2>
+              <p className="home__section-subtitle">
+                Xem các xe có sẵn và chọn trạm phù hợp
+              </p>
             </div>
-          </div>
+          )}
+
 
           {/* Vehicles Section */}
           <div className="home__vehicles">
             <h3 className="home__subsection-title">Xe nổi bật</h3>
-            <div className="grid grid-cols-1 grid-md-cols-2 grid-lg-cols-4">
-              {mockVehicles.slice(0, 4).map((vehicle) => (
-                <VehicleCard
-                  key={vehicle.id}
+            <div className="home__vehicles-grid">
+              {displayVehicles.map((vehicle) => (
+                <NewVehicleCard
+                  key={vehicle.vehicle_id}
                   vehicle={vehicle}
                   onRentVehicle={handleRentVehicle}
-                  userRole={user.role}
+                  onViewDetail={handleViewVehicleDetail}
+                  userRole={user?.role || 'customer'}
                 />
               ))}
             </div>

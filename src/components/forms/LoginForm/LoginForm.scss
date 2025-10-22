@@ -1,87 +1,120 @@
-@import '../../../styles/variables';
-
 .login-form {
-  max-width: 450px;
-  margin: 0 auto;
-  padding: $spacing-8;
-  background: $white;
-  border-radius: $border-radius-xl;
-  box-shadow: $shadow-lg;
+  width: 100%;
 
   &__header {
     text-align: center;
-    margin-bottom: $spacing-8;
+    margin-bottom: 2.5rem;
   }
 
   &__title {
-    font-size: $font-size-3xl;
-    font-weight: 700;
-    color: $gray-800;
-    margin-bottom: $spacing-2;
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 2px;
+    }
   }
 
   &__subtitle {
-    color: $gray-600;
-    font-size: $font-size-lg;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-top: 1rem;
   }
 
   &__form {
     display: flex;
     flex-direction: column;
-    gap: $spacing-6;
+    gap: 1.5rem;
   }
 
   &__error-banner {
     display: flex;
     align-items: center;
-    gap: $spacing-3;
-    padding: $spacing-4;
-    background-color: rgba($error-color, 0.1);
-    border: 1px solid rgba($error-color, 0.3);
-    border-radius: $border-radius;
-    color: $error-color;
-    font-weight: 500;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 1rem;
+    color: #fca5a5;
+    font-weight: 600;
+    font-size: 0.9rem;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
   }
 
   &__demo-info {
-    background: $gray-50;
-    padding: $spacing-4;
-    border-radius: $border-radius;
-    border: 1px solid $gray-200;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(16px);
 
     h4 {
-      font-size: $font-size-sm;
-      font-weight: 600;
-      color: $gray-700;
-      margin-bottom: $spacing-2;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
   }
 
   &__demo-accounts {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: 0.75rem;
   }
 
   &__demo-account {
-    font-size: $font-size-xs;
-    color: $gray-600;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
     
     strong {
-      color: $gray-700;
+      color: rgba(255, 255, 255, 0.95);
+      font-weight: 700;
     }
   }
 
   &__field {
     display: flex;
     flex-direction: column;
-    gap: $spacing-2;
+    gap: 0.75rem;
   }
 
   &__label {
     font-weight: 600;
-    color: $gray-700;
-    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
   }
 
   &__input-wrapper {
@@ -92,60 +125,65 @@
 
   &__input-icon {
     position: absolute;
-    left: $spacing-3;
-    color: $gray-400;
-    width: 1.125rem;
-    height: 1.125rem;
+    left: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    width: 1.25rem;
+    height: 1.25rem;
     z-index: 1;
   }
 
   &__input {
     width: 100%;
-    padding: $spacing-3 $spacing-4 $spacing-3 2.75rem;
-    border: 2px solid $gray-300;
-    border-radius: $border-radius;
-    font-size: $font-size-base;
-    transition: all 0.2s ease;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(16px);
 
     &:focus {
       outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     &--error {
-      border-color: $error-color;
+      border-color: rgba(239, 68, 68, 0.5);
       
       &:focus {
-        border-color: $error-color;
-        box-shadow: 0 0 0 3px rgba($error-color, 0.1);
+        border-color: rgba(239, 68, 68, 0.5);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
       }
     }
 
     &::placeholder {
-      color: $gray-400;
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 
   &__password-toggle {
     position: absolute;
-    right: $spacing-3;
+    right: 1rem;
     background: none;
     border: none;
-    color: $gray-500;
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
-    padding: $spacing-1;
-    border-radius: $border-radius-sm;
-    transition: color 0.2s ease;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
 
     &:hover {
-      color: $primary-color;
+      color: rgba(99, 102, 241, 0.8);
+      background: rgba(255, 255, 255, 0.05);
     }
   }
 
   &__error {
-    color: $error-color;
-    font-size: $font-size-sm;
+    color: #fca5a5;
+    font-size: 0.85rem;
     font-weight: 500;
   }
 
@@ -154,16 +192,16 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: $spacing-2;
+    gap: 1rem;
   }
 
   &__checkbox-label {
     display: flex;
     align-items: center;
-    gap: $spacing-2;
+    gap: 0.75rem;
     cursor: pointer;
-    font-size: $font-size-sm;
-    color: $gray-600;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
 
     span {
       user-select: none;
@@ -171,38 +209,81 @@
   }
 
   &__checkbox {
-    width: 1rem;
-    height: 1rem;
-    accent-color: $primary-color;
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: #6366f1;
+    border-radius: 0.25rem;
   }
 
   &__link-btn {
     background: none;
     border: none;
-    color: $primary-color;
-    font-weight: 500;
+    color: rgba(99, 102, 241, 0.9);
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    font-size: $font-size-sm;
-    transition: color 0.2s ease;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
 
     &:hover {
-      color: $primary-dark;
-      text-decoration: underline;
+      color: #6366f1;
+      background: rgba(99, 102, 241, 0.1);
+      text-decoration: none;
     }
   }
 
   &__submit-btn {
     width: 100%;
-    padding: $spacing-4;
-    font-size: $font-size-lg;
-    font-weight: 600;
+    padding: 1.25rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 1rem;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.4);
+
+      &::before {
+        left: 100%;
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
   }
 
   &__register-link {
     text-align: center;
-    font-size: $font-size-sm;
-    color: $gray-600;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
 
     p {
       margin: 0;

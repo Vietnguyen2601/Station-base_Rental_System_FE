@@ -70,15 +70,17 @@ const StationCard: React.FC<StationCardProps> = ({ station, onSelectStation }) =
         </div>
       </div>
 
-      <div className="station-card__actions">
-        <button
-          onClick={() => onSelectStation(station)}
-          className="btn btn-primary station-card__select-btn"
-          disabled={station.status !== 'active' || station.availableVehicles === 0}
-        >
-          {station.availableVehicles === 0 ? 'No Vehicles Available' : 'Select Station'}
-        </button>
-      </div>
+      {onSelectStation && (
+        <div className="station-card__actions">
+          <button
+            onClick={() => onSelectStation(station)}
+            className="btn btn-primary station-card__select-btn"
+            disabled={station.status !== 'active' || station.availableVehicles === 0}
+          >
+            {station.availableVehicles === 0 ? 'No Vehicles Available' : 'Select Station'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

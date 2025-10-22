@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           dispatch({ type: 'AUTH_FAILURE', payload: 'No authenticated user found' });
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         dispatch({ type: 'AUTH_FAILURE', payload: 'Failed to initialize authentication' });
       }

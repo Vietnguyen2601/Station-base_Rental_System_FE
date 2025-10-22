@@ -1,54 +1,31 @@
 import React, { useState } from 'react';
-import { Car } from 'lucide-react';
+import { Car, ArrowLeft } from 'lucide-react';
 import LoginForm from '../../components/forms/LoginForm/LoginForm';
 import ForgotPasswordForm from '../../components/forms/ForgotPasswordForm/ForgotPasswordForm';
-import { LoginCredentials, ForgotPasswordData, User } from '../../types';
-import { mockUsers, mockCredentials } from '../../utils/mockData';
+import { User } from '../../types';
 import './Login.scss';
 
 type LoginStep = 'login' | 'forgot-password';
 
 interface LoginProps {
-  onLoginSuccess: (user: User) => void;
+  onLoginSuccess: (credentials: { user: User }) => void;
   onRegister: () => void;
+  onBack?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister, onBack }) => {
   const [currentStep, setCurrentStep] = useState<LoginStep>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
 
   // Handle login submission
-  const handleLogin = async (credentials: LoginCredentials) => {
+  const handleLogin = async (credentials: { user: User }) => {
     setIsLoading(true);
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Check credentials against mock data
-      const validCredential = mockCredentials.find(
-        cred => cred.email === credentials.email && cred.password === credentials.password
-      );
-
-      if (!validCredential) {
-        throw new Error('Email hoặc mật khẩu không chính xác');
-      }
-
-      // Find user data
-      const user = mockUsers.find(u => u.email === credentials.email);
-      if (!user) {
-        throw new Error('Không tìm thấy thông tin người dùng');
-      }
-
-      // Store login info if remember me is checked
-      if (credentials.rememberMe) {
-        localStorage.setItem('rememberedEmail', credentials.email);
-      }
-
-      onLoginSuccess(user);
+      onLoginSuccess(credentials);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
@@ -57,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister }) => {
   };
 
   // Handle forgot password submission
-  const handleForgotPassword = async (data: ForgotPasswordData) => {
+  const handleForgotPassword = async () => {
     setIsLoading(true);
     setError('');
 
@@ -65,12 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister }) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Check if email exists in mock data
-      const userExists = mockUsers.some(user => user.email === data.email);
-      if (!userExists) {
-        throw new Error('Email này không tồn tại trong hệ thống');
-      }
-
+      // For demo purposes, always succeed
       setForgotPasswordSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gửi email thất bại. Vui lòng thử lại.');
@@ -98,6 +70,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister }) => {
         <div className="login-page__background-overlay"></div>
       </div>
       
+      {/* Back Button */}
+      {onBack && (
+        <div className="login-page__back-button">
+          <button
+            type="button"
+            onClick={onBack}
+            className="login-page__back-btn"
+          >
+            <ArrowLeft size={20} />
+            Quay lại
+          </button>
+        </div>
+      )}
+
       <div className="container">
         <div className="login-page__content">
           {/* Logo Section */}
@@ -127,34 +113,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onRegister }) => {
                 success={forgotPasswordSuccess}
               />
             )}
-          </div>
-
-          {/* Features Section */}
-          <div className="login-page__features">
-            <h3>Tại sao chọn EVRental?</h3>
-            <div className="login-page__features-list">
-              <div className="login-page__feature">
-                <div className="login-page__feature-icon">🚗</div>
-                <div className="login-page__feature-content">
-                  <h4>Xe điện hiện đại</h4>
-                  <p>Đa dạng các loại xe điện từ các thương hiệu hàng đầu</p>
-                </div>
-              </div>
-              <div className="login-page__feature">
-                <div className="login-page__feature-icon">⚡</div>
-                <div className="login-page__feature-content">
-                  <h4>Trạm sạc tiện lợi</h4>
-                  <p>Hệ thống trạm sạc rộng khắp thành phố</p>
-                </div>
-              </div>
-              <div className="login-page__feature">
-                <div className="login-page__feature-icon">📱</div>
-                <div className="login-page__feature-content">
-                  <h4>Ứng dụng thông minh</h4>
-                  <p>Đặt xe, thanh toán và quản lý dễ dàng</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

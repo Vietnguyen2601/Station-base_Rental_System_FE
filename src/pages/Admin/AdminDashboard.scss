@@ -1,0 +1,140 @@
+@import '../../styles/variables';
+
+.admin-dashboard {
+  &__header {
+    margin-bottom: $spacing-8;
+
+    h2 {
+      font-size: $font-size-2xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin: 0 0 $spacing-2 0;
+    }
+
+    p {
+      color: $gray-600;
+      margin: 0;
+    }
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: $spacing-6;
+    margin-bottom: $spacing-8;
+  }
+
+  &__stat {
+    background: $white;
+    border-radius: $border-radius-lg;
+    padding: $spacing-6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: $spacing-4;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    &--blue {
+      border-left: 4px solid $primary-color;
+    }
+
+    &--green {
+      border-left: 4px solid $success-color;
+    }
+
+    &--purple {
+      border-left: 4px solid $secondary-color;
+    }
+
+    &--orange {
+      border-left: 4px solid $warning-color;
+    }
+  }
+
+  &__stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $white;
+
+    .admin-dashboard__stat--blue & {
+      background: $primary-color;
+    }
+
+    .admin-dashboard__stat--green & {
+      background: $success-color;
+    }
+
+    .admin-dashboard__stat--purple & {
+      background: $secondary-color;
+    }
+
+    .admin-dashboard__stat--orange & {
+      background: $warning-color;
+    }
+  }
+
+  &__stat-content {
+    h3 {
+      font-size: $font-size-2xl;
+      font-weight: 700;
+      color: $gray-800;
+      margin: 0 0 $spacing-1 0;
+    }
+
+    p {
+      color: $gray-600;
+      margin: 0;
+      font-size: $font-size-sm;
+    }
+  }
+
+  &__content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: $spacing-6;
+  }
+
+  &__card {
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  &__card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-4 $spacing-6;
+    border-bottom: 1px solid $gray-200;
+    background: $gray-50;
+
+    h3 {
+      font-size: $font-size-lg;
+      font-weight: 600;
+      color: $gray-800;
+      margin: 0;
+    }
+
+    svg {
+      color: $gray-500;
+    }
+  }
+
+  &__card-content {
+    padding: $spacing-6;
+
+    p {
+      color: $gray-600;
+      margin: 0;
+    }
+  }
+}
