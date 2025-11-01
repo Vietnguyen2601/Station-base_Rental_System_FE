@@ -2,7 +2,11 @@ import React from 'react';
 import { Car, MapPin, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import './StaffDashboard.scss';
 
-const StaffDashboard: React.FC = () => {
+interface StaffDashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+const StaffDashboard: React.FC<StaffDashboardProps> = ({ onNavigate }) => {
   const stats = [
     { title: 'Xe được phân công', value: '12', icon: <Car size={24} />, color: 'blue' },
     { title: 'Trạm quản lý', value: '3', icon: <MapPin size={24} />, color: 'green' },
@@ -21,6 +25,15 @@ const StaffDashboard: React.FC = () => {
       <div className="staff-dashboard__header">
         <h2>Bảng điều khiển nhân viên</h2>
         <p>Quản lý xe và trạm được phân công</p>
+        {onNavigate && (
+          <button
+            type="button"
+            className="staff-dashboard__cta"
+            onClick={() => onNavigate('stations')}
+          >
+            Đi tới quản lý trạm
+          </button>
+        )}
       </div>
 
       <div className="staff-dashboard__stats">

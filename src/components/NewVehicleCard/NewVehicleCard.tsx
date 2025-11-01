@@ -1,11 +1,14 @@
 import React from 'react';
 import { Battery, Zap, MapPin, CheckCircle, AlertCircle, Clock, Car } from 'lucide-react';
 import { NewVehicleCardProps } from '../../types';
+import CloudinaryImage from '../common/CloudinaryImage/CloudinaryImage';
 import './NewVehicleCard.scss';
 
 const NewVehicleCard: React.FC<NewVehicleCardProps> = ({ vehicle, onRentVehicle, onViewDetail, userRole }) => {
   const getBatteryColor = () => {
-    if (!vehicle.battery_level) return 'error';
+    if (vehicle.battery_level === undefined || vehicle.battery_level === null) {
+      return 'info';
+    }
     if (vehicle.battery_level > 70) return 'success';
     if (vehicle.battery_level > 30) return 'warning';
     return 'error';
@@ -56,7 +59,21 @@ const NewVehicleCard: React.FC<NewVehicleCardProps> = ({ vehicle, onRentVehicle,
     }
   };
 
-  const canRent = vehicle.status === 'AVAILABLE' && (vehicle.battery_level || 0) > 20;
+  const canRent = vehicle.status === 'AVAILABLE';
+
+  const formatBatteryCapacity = () => {
+    if (!vehicle.battery_capacity || vehicle.battery_capacity <= 0) {
+      return 'Đang cập nhật';
+    }
+    return `${vehicle.battery_capacity} kWh`;
+  };
+
+  const formatRange = () => {
+    if (!vehicle.range || vehicle.range <= 0) {
+      return 'Đang cập nhật';
+    }
+    return `${vehicle.range} km`;
+  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger if clicking on the action button
@@ -86,17 +103,19 @@ const NewVehicleCard: React.FC<NewVehicleCardProps> = ({ vehicle, onRentVehicle,
       
       {/* Image Section */}
       <div className="new-vehicle-card__image-wrapper">
-        {vehicle.img ? (
-          <img 
-            src={vehicle.img} 
-            alt={vehicle.name}
-            className="new-vehicle-card__image"
-          />
-        ) : (
-          <div className="new-vehicle-card__image-placeholder">
-            <Car size={48} />
-          </div>
-        )}
+        <CloudinaryImage
+          src={vehicle.img}
+          alt={vehicle.name}
+          className="new-vehicle-card__image"
+          cropToSquare={false}
+          width={800}
+          height={600}
+          fallback={
+            <div className="new-vehicle-card__image-placeholder">
+              <Car size={48} />
+            </div>
+          }
+        />
         
         {/* Status Badge */}
         <div className={`new-vehicle-card__status-badge new-vehicle-card__status-badge--${getStatusColor()}`}>
@@ -122,7 +141,7 @@ const NewVehicleCard: React.FC<NewVehicleCardProps> = ({ vehicle, onRentVehicle,
               <span className="new-vehicle-card__detail-label">Dung lượng pin</span>
             </div>
             <span className="new-vehicle-card__detail-value">
-              {vehicle.battery_capacity} kWh
+              {formatBatteryCapacity()}
             </span>
           </div>
 
@@ -133,12 +152,12 @@ const NewVehicleCard: React.FC<NewVehicleCardProps> = ({ vehicle, onRentVehicle,
               <span className="new-vehicle-card__detail-label">Tầm hoạt động</span>
             </div>
             <span className="new-vehicle-card__detail-value">
-              {vehicle.range} km
+              {formatRange()}
             </span>
           </div>
 
           {/* Battery Level (if available) */}
-          {vehicle.battery_level && (
+          {vehicle.battery_level !== undefined && vehicle.battery_level !== null && (
             <div className="new-vehicle-card__detail">
               <div className="new-vehicle-card__detail-header">
                 <Battery className="new-vehicle-card__detail-icon" size={16} />

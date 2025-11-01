@@ -9,10 +9,12 @@ export { default as Sidebar } from './Sidebar/Sidebar';
 export { default as AdminLayout } from './layouts/AdminLayout/AdminLayout';
 export { default as StaffLayout } from './layouts/StaffLayout/StaffLayout';
 export { default as VehicleManagementModal } from './VehicleManagementModal/VehicleManagementModal';
+export { default as VehicleHierarchyView } from './VehicleHierarchyView/VehicleHierarchyView';
 
 // Common Components
 export { default as LoadingSpinner } from './common/LoadingSpinner/LoadingSpinner';
 export { default as ErrorBoundary } from './common/ErrorBoundary/ErrorBoundary';
+export { default as CloudinaryImage } from './common/CloudinaryImage/CloudinaryImage';
 // export { default as ConfirmDialog } from './common/ConfirmDialog/ConfirmDialog';
 
 // UI Components

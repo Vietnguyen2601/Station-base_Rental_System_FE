@@ -15,7 +15,21 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true,
+    strictPort: true,
+    open: false,
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7250',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('proxy error', err);
+          });
+        },
+      },
+    },
   },
   build: {
     outDir: 'dist',

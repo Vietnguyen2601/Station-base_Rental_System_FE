@@ -9,11 +9,17 @@ import Register from './pages/Register/Register';
 import Booking from './pages/Booking/Booking';
 import CheckIn from './pages/CheckIn/CheckIn';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import AccountManagement from './pages/Admin/AccountManagement';
 import StaffDashboard from './pages/Staff/StaffDashboard';
 import VehicleManagement from './pages/Staff/VehicleManagement';
+import VehicleTypeManagement from './pages/Staff/VehicleTypeManagement';
+import VehicleModelSelection from './pages/Staff/VehicleModelSelection';
+import StationManagement from './pages/Staff/StationManagement';
 import VehicleDetail from './pages/VehicleDetail/VehicleDetail';
+import Profile from './pages/Profile/Profile';
+import OrderManagement from './pages/Staff/OrderManagement';
 // import Return from './pages/Return/Return';
-import { User } from './types';
+import { User, NewVehicleCardData } from './types';
 import authService from './services/authService';
 // import { mockUsers } from './utils/mockData';
 import './styles/main.scss';
@@ -22,7 +28,7 @@ function App() {
   // Authentication state - In a real app, this would be managed by an auth context/service
   const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState<string>('home'); // Start with home page
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [selectedVehicleCard, setSelectedVehicleCard] = useState<NewVehicleCardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check authentication status on app load
@@ -32,12 +38,12 @@ function App() {
         if (authService.isAuthenticated()) {
           const user = authService.getCurrentUser();
           if (user) {
-            setCurrentUser(user);
+            setCurrentUser(user as User);
           } else {
             // Try to refresh token to get user data
             try {
               const response = await authService.refreshAccessToken();
-              setCurrentUser(response.user as User);
+              setCurrentUser(response as User);
             } catch {
               // Refresh failed, logout
               authService.logout();
@@ -70,7 +76,7 @@ function App() {
     authService.logout();
     setCurrentUser(undefined);
     setCurrentPage('home');
-    setSelectedVehicleId(null);
+    setSelectedVehicleCard(null);
   };
 
   const handleLogin = () => {
@@ -81,21 +87,19 @@ function App() {
     setCurrentPage('register');
   };
 
-  const handleViewVehicleDetail = (vehicleId: string) => {
-    console.log('handleViewVehicleDetail called with:', vehicleId);
-    setSelectedVehicleId(vehicleId);
+  const handleViewVehicleDetail = (vehicle: NewVehicleCardData) => {
+    setSelectedVehicleCard(vehicle);
     setCurrentPage('vehicle-detail');
-    console.log('Current page set to: vehicle-detail');
   };
 
   const handleBackFromVehicleDetail = () => {
-    setSelectedVehicleId(null);
+    setSelectedVehicleCard(null);
     setCurrentPage('home');
   };
 
   // Simple page routing - In a real app, use React Router
   const renderCurrentPage = () => {
-    console.log('renderCurrentPage called with currentPage:', currentPage, 'selectedVehicleId:', selectedVehicleId);
+    console.log('renderCurrentPage called with currentPage:', currentPage, 'selectedVehicle:', selectedVehicleCard?.vehicle_id);
     if (!currentUser) {
       switch (currentPage) {
         case 'login':
@@ -106,12 +110,20 @@ function App() {
               onBack={() => setCurrentPage('home')}
             />
           );
+        case 'profile':
+          return (
+            <Login
+              onLoginSuccess={handleLoginSuccess}
+              onRegister={handleRegister}
+              onBack={() => setCurrentPage('home')}
+            />
+          );
         case 'register': 
           return <Register onBack={handleLogin} />;
         case 'vehicle-detail': 
-          return selectedVehicleId ? (
+          return selectedVehicleCard ? (
             <VehicleDetail 
-              vehicleId={selectedVehicleId}
+              vehicleCard={selectedVehicleCard}
               onBack={handleBackFromVehicleDetail}
               onRentVehicle={(vehicle) => {
                 alert(`Rental process started for ${vehicle.name}`);
@@ -134,6 +146,7 @@ function App() {
           onLogout={handleLogout}
         >
           {currentPage === 'dashboard' && <AdminDashboard />}
+          {currentPage === 'accounts' && <AccountManagement />}
           {/* Add more admin pages here */}
         </AdminLayout>
       );
@@ -147,8 +160,12 @@ function App() {
           onPageChange={setCurrentPage}
           onLogout={handleLogout}
         >
-          {currentPage === 'dashboard' && <StaffDashboard />}
+          {currentPage === 'dashboard' && <StaffDashboard onNavigate={setCurrentPage} />}
           {currentPage === 'vehicles' && <VehicleManagement onBack={() => setCurrentPage('dashboard')} />}
+          {currentPage === 'vehicle-types' && <VehicleTypeManagement />}
+          {currentPage === 'model-selection' && <VehicleModelSelection onBack={() => setCurrentPage('dashboard')} />}
+          {currentPage === 'stations' && <StationManagement onBack={() => setCurrentPage('dashboard')} />}
+          {currentPage === 'bookings' && <OrderManagement />}
           {/* Add more staff pages here */}
         </StaffLayout>
       );
@@ -156,13 +173,15 @@ function App() {
 
     // Handle customer pages
     switch (currentPage) {
+      case 'profile':
+        return <Profile user={currentUser} />;
       case 'register': return <Register onBack={() => setCurrentPage('home')} />;
       case 'booking': return <Booking user={currentUser} />;
       case 'checkin': return <CheckIn user={currentUser} />;
       case 'vehicle-detail': 
-        return selectedVehicleId ? (
+        return selectedVehicleCard ? (
           <VehicleDetail 
-            vehicleId={selectedVehicleId}
+            vehicleCard={selectedVehicleCard}
             onBack={handleBackFromVehicleDetail}
             onRentVehicle={(vehicle) => {
               alert(`Rental process started for ${vehicle.name}`);
@@ -209,10 +228,12 @@ function App() {
             user={currentUser}
             onLogin={handleLogin}
             onLogout={handleLogout}
+            onGoToProfile={() => setCurrentPage('profile')}
           />
           
           {/* Simple Navigation for Demo - In real app, use React Router */}
           <nav style={{ padding: '1rem', background: '#f3f4f6', textAlign: 'center' }}>
+            <button onClick={() => setCurrentPage('profile')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'profile' ? '#2563eb' : '#fff', color: currentPage === 'profile' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Hồ sơ</button>
             <button onClick={() => setCurrentPage('home')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'home' ? '#2563eb' : '#fff', color: currentPage === 'home' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Trang chủ</button>
             <button onClick={() => setCurrentPage('register')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'register' ? '#2563eb' : '#fff', color: currentPage === 'register' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đăng ký</button>
             <button onClick={() => setCurrentPage('booking')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'booking' ? '#2563eb' : '#fff', color: currentPage === 'booking' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đặt xe</button>

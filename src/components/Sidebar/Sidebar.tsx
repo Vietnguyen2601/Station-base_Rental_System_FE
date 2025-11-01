@@ -1,14 +1,14 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
-  Users, 
   Car, 
   MapPin, 
-  Settings, 
   BarChart3, 
   FileText, 
   LogOut,
-  User
+  User,
+  Package,
+  Users
 } from 'lucide-react';
 import { User as UserType } from '../../types';
 import './Sidebar.scss';
@@ -32,20 +32,18 @@ const Sidebar: React.FC<SidebarProps> = ({ user, currentPage, onPageChange, onLo
   const getSidebarItems = (): SidebarItem[] => {
     if (user.role === 'admin') {
       return [
-        { id: 'dashboard', label: 'Tổng quan', icon: <LayoutDashboard size={20} />, path: 'dashboard' },
-        { id: 'users', label: 'Quản lý người dùng', icon: <Users size={20} />, path: 'users' },
-        { id: 'vehicles', label: 'Quản lý xe', icon: <Car size={20} />, path: 'vehicles' },
-        { id: 'stations', label: 'Quản lý trạm', icon: <MapPin size={20} />, path: 'stations' },
-        { id: 'bookings', label: 'Đặt xe', icon: <FileText size={20} />, path: 'bookings' },
-        { id: 'reports', label: 'Báo cáo', icon: <BarChart3 size={20} />, path: 'reports' },
-        { id: 'settings', label: 'Cài đặt', icon: <Settings size={20} />, path: 'settings' },
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: 'dashboard' },
+        { id: 'accounts', label: 'Quản lý tài khoản', icon: <Users size={20} />, path: 'accounts' },
+        { id: 'reports', label: 'Report', icon: <BarChart3 size={20} />, path: 'reports' },
       ];
     } else if (user.role === 'staff') {
       return [
         { id: 'dashboard', label: 'Tổng quan', icon: <LayoutDashboard size={20} />, path: 'dashboard' },
         { id: 'vehicles', label: 'Quản lý xe', icon: <Car size={20} />, path: 'vehicles' },
+        { id: 'model-selection', label: 'Chọn loại xe', icon: <Package size={20} />, path: 'model-selection' },
+        { id: 'vehicle-types', label: 'Loại xe', icon: <Package size={20} />, path: 'vehicle-types' },
         { id: 'stations', label: 'Quản lý trạm', icon: <MapPin size={20} />, path: 'stations' },
-        { id: 'bookings', label: 'Đặt xe', icon: <FileText size={20} />, path: 'bookings' },
+  { id: 'bookings', label: 'Quản lý đơn', icon: <FileText size={20} />, path: 'bookings' },
         { id: 'reports', label: 'Báo cáo', icon: <BarChart3 size={20} />, path: 'reports' },
       ];
     }
@@ -84,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, currentPage, onPageChange, onLo
               <User size={20} />
             </div>
             <div className="sidebar__user-info">
-              <div className="sidebar__user-name">{user.name}</div>
+              <div className="sidebar__user-name">{user.username}</div>
               <div className="sidebar__user-role">{user.role}</div>
             </div>
           </div>

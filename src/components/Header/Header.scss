@@ -86,9 +86,22 @@
     }
 
     &-info {
+      @include button-base;
       display: flex;
       align-items: center;
       gap: $spacing-2;
+      padding: $spacing-2 $spacing-3;
+      border-radius: 999px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: inherit;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+
+      &:hover {
+        background-color: $gray-100;
+        border-color: $gray-200;
+      }
     }
 
     &-icon {
@@ -154,6 +167,19 @@
       color: $gray-600;
       font-weight: 500;
       transition: color 0.2s ease;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+
+    &-item--action {
+      @include button-base;
+      text-align: left;
+      width: 100%;
+      padding: $spacing-3 0;
+      background: transparent;
+      color: $gray-700;
 
       &:hover {
         color: $primary-color;

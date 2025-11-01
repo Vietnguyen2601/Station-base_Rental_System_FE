@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, AlertCircle, User } from 'lucide-react';
 import { LoginFormProps, LoginCredentials } from '../../../types';
 import authService, { ApiError } from '../../../services/authService';
 import './LoginForm.scss';
@@ -69,19 +69,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      const response = await authService.login({
+      const userInfo = await authService.login({
         username: credentials.username,
         password: credentials.password
       });
 
-      // Save user data
-      authService.saveCurrentUser(response.user);
-      
       // Call parent onSubmit with user data
       onSubmit({
         ...credentials,
-        user: response.user
-      } as any);
+        user: userInfo
+      } as never);
       
     } catch (error) {
       console.error('Login error:', error);

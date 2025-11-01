@@ -11,11 +11,18 @@ const navigationItems: NavItem[] = [
   { label: 'Support', path: '/support' },
 ];
 
-const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onGoToProfile }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleGoToProfile = () => {
+    if (onGoToProfile) {
+      onGoToProfile();
+    }
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -45,11 +52,16 @@ const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout }) => {
           <div className="header__actions">
             {user ? (
               <div className="header__user">
-                <div className="header__user-info">
+                <button
+                  type="button"
+                  className="header__user-info"
+                  onClick={handleGoToProfile}
+                  aria-label="Xem hồ sơ của tôi"
+                >
                   <User className="header__user-icon" />
-                  <span className="header__user-name">{user.name}</span>
+                  <span className="header__user-name">{user.name ?? user.username}</span>
                   <span className="header__user-role">({user.role})</span>
-                </div>
+                </button>
                 <button
                   onClick={onLogout}
                   className="header__logout-btn"
@@ -78,6 +90,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout }) => {
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <nav className="header__mobile-nav">
+            {user && (
+              <button
+                type="button"
+                className="header__mobile-nav-item header__mobile-nav-item--action"
+                onClick={handleGoToProfile}
+              >
+                Hồ sơ của tôi
+              </button>
+            )}
             {navigationItems.map((item) => (
               <a
                 key={item.path}

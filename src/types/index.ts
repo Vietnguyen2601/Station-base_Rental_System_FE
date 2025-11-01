@@ -3,6 +3,7 @@
 export interface User {
   id: string;
   username: string;
+  name?: string;
   email: string;
   role: 'customer' | 'staff' | 'admin';
   contactNumber?: string;
@@ -98,6 +99,7 @@ export interface HeaderProps {
   user?: User;
   onLogin: () => void;
   onLogout: () => void;
+  onGoToProfile?: () => void;
 }
 
 export interface FooterProps {
@@ -125,6 +127,14 @@ export interface NewVehicleCardData {
   img?: string; // from Vehicle
   battery_level?: number; // from Vehicle
   color?: string; // from Vehicle
+  entityType?: 'vehicle' | 'model';
+  modelId?: string;
+  modelName?: string;
+  manufacturer?: string;
+  typeId?: string;
+  typeDescription?: string;
+  specs?: string;
+  stationName?: string;
 }
 
 export interface VehicleCardProps {

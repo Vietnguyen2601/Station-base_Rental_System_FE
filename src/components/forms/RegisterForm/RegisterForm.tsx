@@ -90,7 +90,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
     setIsSubmitting(true);
     
     try {
-      const response = await authService.register({
+      await authService.register({
         username: formData.username,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
@@ -98,15 +98,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSubmit, isLoading, error 
         contactNumber: formData.contactNumber
       });
 
-      // Save user data
-      authService.saveCurrentUser(response.user);
-      
       // Call parent onSubmit with user data
       onSubmit(formData);
       
     } catch (error) {
       console.error('Registration error:', error);
-      if (error instanceof Error) {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        setSubmitError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng hoặc liên hệ hỗ trợ.');
+      } else if (error instanceof Error) {
         setSubmitError(error.message);
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
         setSubmitError((error as ApiError).message);

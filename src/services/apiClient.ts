@@ -7,7 +7,7 @@ interface RequestConfig extends RequestInit {
   timeout?: number;
 }
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
   status: number;
@@ -31,9 +31,9 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     // Set default headers
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...fetchConfig.headers,
+      ...fetchConfig.headers as Record<string, string>,
     };
 
     // Add authentication token if available
@@ -50,6 +50,7 @@ class ApiClient {
       const response = await fetch(url, {
         ...fetchConfig,
         headers,
+        credentials: 'include',
         signal: controller.signal,
       });
 
@@ -69,7 +70,7 @@ class ApiClient {
     } catch (error) {
       clearTimeout(timeoutId);
       
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Request timeout');
       }
       
@@ -83,7 +84,7 @@ class ApiClient {
 
   async post<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -95,7 +96,7 @@ class ApiClient {
 
   async put<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -111,8 +112,12 @@ class ApiClient {
 }
 
 // Create and export a default instance
-const apiClient = new ApiClient(
-  process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api'
-);
+// Use /api proxy for development, full URL for production
+const isProduction = import.meta.env.PROD;
+const baseURL = isProduction 
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://localhost:7250/api')
+  : '/api';
+
+const apiClient = new ApiClient(baseURL);
 
 export default apiClient;

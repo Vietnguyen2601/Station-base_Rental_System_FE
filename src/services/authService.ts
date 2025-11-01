@@ -1,4 +1,7 @@
 // Authentication Service
+import { AUTH_API } from '../config/api';
+// import { parseJWT, isTokenValid, parseRole } from '../utils/jwtUtils';
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -16,17 +19,24 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
+// Updated to match actual backend response format
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-    contactNumber?: string;
+  statusCode: number;
+  message: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAtUtc: string;
   };
+}
+
+// User info extracted from JWT token
+export interface UserInfo {
+  id: string;
+  username: string;
+  role: 'customer' | 'staff' | 'admin' | null;
+  email?: string;
+  contactNumber?: string;
 }
 
 export interface ApiError {
@@ -36,7 +46,7 @@ export interface ApiError {
 }
 
 class AuthService {
-  private baseURL = 'https://localhost:7250/api/Auth';
+  private baseURL = AUTH_API;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
 
@@ -78,8 +88,55 @@ class AuthService {
     return this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {};
   }
 
+  // Extract user info from JWT token
+  private extractUserInfoFromToken(token: string): UserInfo | null {
+    try {
+      // Decode JWT token
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      const payload = parts[1];
+      const padded = payload.padEnd(
+        payload.length + (4 - (payload.length % 4)) % 4,
+        '='
+      );
+      const decoded = atob(padded);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const jwtPayload: any = JSON.parse(decoded);
+
+      // Extract role from JWT claim
+      const roleFromClaim = jwtPayload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      const roleValue = roleFromClaim || jwtPayload.role;
+      const role = this.parseRole(roleValue);
+
+      return {
+        id: jwtPayload.sub || jwtPayload.unique_name || '',
+        username: jwtPayload.unique_name || '',
+        role,
+      };
+    } catch (error) {
+      console.error('Error extracting user info from token:', error);
+      return null;
+    }
+  }
+
+  // Parse and validate role
+  private parseRole(roleString: string | null | undefined): 'customer' | 'staff' | 'admin' | null {
+    if (!roleString) return null;
+
+    const lowerRole = roleString.toLowerCase().trim();
+
+    if (lowerRole === 'customer') return 'customer';
+    if (lowerRole === 'staff') return 'staff';
+    if (lowerRole === 'admin') return 'admin';
+
+    console.warn(`Unknown role: ${roleString}`);
+    return null;
+  }
+
   // Handle API errors
   private async handleApiError(response: Response): Promise<ApiError> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let errorData: any;
     try {
       errorData = await response.json();
@@ -137,13 +194,14 @@ class AuthService {
   }
 
   // Login
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
+  async login(credentials: LoginRequest): Promise<UserInfo> {
     try {
       const response = await fetch(`${this.baseURL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(credentials),
       });
 
@@ -152,10 +210,24 @@ class AuthService {
       }
 
       const data: AuthResponse = await response.json();
-      this.saveTokensToStorage(data.accessToken, data.refreshToken);
-      return data;
+      
+      // Extract tokens from response
+      const { accessToken, refreshToken } = data.data;
+      this.saveTokensToStorage(accessToken, refreshToken);
+      
+      // Extract user info from JWT token
+      const userInfo = this.extractUserInfoFromToken(accessToken);
+      if (userInfo) {
+        this.saveCurrentUser(userInfo);
+      }
+      
+      return userInfo || { id: '', username: '', role: null };
     } catch (error) {
       if (error instanceof Error) {
+        // Better error message for network issues
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Unable to reach the server. Please check your connection and ensure the backend server is running at https://localhost:7250');
+        }
         throw error;
       }
       throw new Error('Login failed. Please try again.');
@@ -163,13 +235,14 @@ class AuthService {
   }
 
   // Register
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
+  async register(userData: RegisterRequest): Promise<UserInfo> {
     try {
       const response = await fetch(`${this.baseURL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(userData),
       });
 
@@ -178,10 +251,24 @@ class AuthService {
       }
 
       const data: AuthResponse = await response.json();
-      this.saveTokensToStorage(data.accessToken, data.refreshToken);
-      return data;
+      
+      // Extract tokens from response
+      const { accessToken, refreshToken } = data.data;
+      this.saveTokensToStorage(accessToken, refreshToken);
+      
+      // Extract user info from JWT token
+      const userInfo = this.extractUserInfoFromToken(accessToken);
+      if (userInfo) {
+        this.saveCurrentUser(userInfo);
+      }
+      
+      return userInfo || { id: '', username: '', role: null };
     } catch (error) {
       if (error instanceof Error) {
+        // Better error message for network issues
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Unable to reach the server. Please check your connection and ensure the backend server is running at https://localhost:7250');
+        }
         throw error;
       }
       throw new Error('Registration failed. Please try again.');
@@ -189,7 +276,7 @@ class AuthService {
   }
 
   // Refresh access token
-  async refreshAccessToken(): Promise<AuthResponse> {
+  async refreshAccessToken(): Promise<UserInfo> {
     if (!this.refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -200,6 +287,7 @@ class AuthService {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
 
@@ -208,8 +296,12 @@ class AuthService {
       }
 
       const data: AuthResponse = await response.json();
-      this.saveTokensToStorage(data.accessToken, data.refreshToken);
-      return data;
+      const { accessToken, refreshToken } = data.data;
+      this.saveTokensToStorage(accessToken, refreshToken);
+      
+      // Extract user info from new token
+      const userInfo = this.extractUserInfoFromToken(accessToken);
+      return userInfo || { id: '', username: '', role: null };
     } catch (error) {
       this.clearTokensFromStorage();
       throw error;
@@ -237,7 +329,7 @@ class AuthService {
   }
 
   // Get current user info (if stored)
-  getCurrentUser(): any {
+  getCurrentUser(): UserInfo | null {
     if (typeof window !== 'undefined') {
       const userStr = localStorage.getItem('currentUser');
       return userStr ? JSON.parse(userStr) : null;
@@ -246,7 +338,7 @@ class AuthService {
   }
 
   // Save current user info
-  saveCurrentUser(user: any): void {
+  saveCurrentUser(user: UserInfo): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('currentUser', JSON.stringify(user));
     }
@@ -257,6 +349,32 @@ class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('currentUser');
     }
+  }
+
+  // Get current user role
+  getCurrentUserRole(): 'customer' | 'staff' | 'admin' | null {
+    const user = this.getCurrentUser();
+    return user?.role || null;
+  }
+
+  // Check if user has specific role
+  hasRole(role: 'customer' | 'staff' | 'admin'): boolean {
+    return this.getCurrentUserRole() === role;
+  }
+
+  // Check if user is admin
+  isAdmin(): boolean {
+    return this.hasRole('admin');
+  }
+
+  // Check if user is staff
+  isStaff(): boolean {
+    return this.hasRole('staff');
+  }
+
+  // Check if user is customer
+  isCustomer(): boolean {
+    return this.hasRole('customer');
   }
 }
 
