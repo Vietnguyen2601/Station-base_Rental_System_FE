@@ -25,6 +25,7 @@ import {
   VehicleType as ApiVehicleType,
   VehicleModel as ApiVehicleModel,
   StationRecord,
+  Vehicle as ApiVehicleDetail,
 } from '../../services';
 import CloudinaryImage from '../../components/common/CloudinaryImage/CloudinaryImage';
 import { uploadVehicleImage } from '../../utils/cloudinary';
@@ -71,6 +72,8 @@ interface VehicleFormState {
   batteryCapacity: string;
   range: string;
   img: string;
+  lastMaintenance: string;
+  isActive: boolean;
 }
 
 const STATUS_LABELS: Record<VehicleStatus, string> = {
@@ -162,7 +165,11 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
     batteryCapacity: '',
     range: '',
     img: '',
+    lastMaintenance: '',
+    isActive: true,
   });
+  const [vehicleModalMode, setVehicleModalMode] = useState<'create' | 'edit'>('create');
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
@@ -172,10 +179,12 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
   const [typeFormError, setTypeFormError] = useState<string | null>(null);
   const [modelFormError, setModelFormError] = useState<string | null>(null);
   const [vehicleFormError, setVehicleFormError] = useState<string | null>(null);
+  const [vehicleFormSuccess, setVehicleFormSuccess] = useState<string | null>(null);
   const [imageUploadStatus, setImageUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const imageUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const [vehicleDetailLoading, setVehicleDetailLoading] = useState(false);
 
   const imagePreviewSrc = useMemo(() => vehicleForm.img.trim(), [vehicleForm.img]);
   const vehiclePreviewAlt = useMemo(() => {
@@ -189,6 +198,56 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
     setImageUploadError(null);
     setUploadedFileName(null);
   }, []);
+
+  const activeVehicleTypes = useMemo(
+    () => vehicleTypes.filter((type) => type.isactive),
+    [vehicleTypes]
+  );
+
+  const activeVehicleModels = useMemo(
+    () => vehicleModels.filter((model) => model.isactive),
+    [vehicleModels]
+  );
+
+  const activeStations = useMemo(
+    () => stations.filter((station) => station.isactive),
+    [stations]
+  );
+
+  const mapDetailToFormState = useCallback(
+    (detail: ApiVehicleDetail): VehicleFormState => {
+      const resolvedModelId =
+        detail.modelId ??
+        vehicleModels.find((model) => model.name === detail.modelName)?.vehicleModelId ??
+        activeVehicleModels[0]?.vehicleModelId ??
+        '';
+
+      const resolvedStationId =
+        detail.stationId ??
+        stations.find((station) => station.name === detail.stationName)?.stationId ??
+        activeStations[0]?.stationId ??
+        '';
+
+      const normalizedStatus = VEHICLE_STATUS_OPTIONS.includes(detail.status as VehicleStatus)
+        ? (detail.status as VehicleStatus)
+        : 'AVAILABLE';
+
+      return {
+        modelId: resolvedModelId,
+        stationId: resolvedStationId ?? '',
+        serialNumber: detail.serialNumber ?? '',
+        status: normalizedStatus,
+        color: detail.color ?? '',
+        batteryLevel: detail.batteryLevel != null ? String(detail.batteryLevel) : '',
+        batteryCapacity: detail.batteryCapacity != null ? String(detail.batteryCapacity) : '',
+        range: detail.range != null ? String(detail.range) : '',
+        img: detail.img ?? '',
+        lastMaintenance: detail.lastMaintenance ? detail.lastMaintenance.slice(0, 10) : '',
+        isActive: detail.isactive ?? detail.isActive ?? true,
+      };
+    },
+    [activeStations, activeVehicleModels, stations, vehicleModels]
+  );
 
   const fetchHierarchyData = useCallback(async () => {
     try {
@@ -225,21 +284,6 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
   useEffect(() => {
     fetchReferenceData();
   }, [fetchReferenceData]);
-
-  const activeVehicleTypes = useMemo(
-    () => vehicleTypes.filter((type) => type.isactive),
-    [vehicleTypes]
-  );
-
-  const activeVehicleModels = useMemo(
-    () => vehicleModels.filter((model) => model.isactive),
-    [vehicleModels]
-  );
-
-  const activeStations = useMemo(
-    () => stations.filter((station) => station.isactive),
-    [stations]
-  );
 
   // Build flat vehicle list from hierarchy for backward compatibility with existing filters
   const allVehicles = useMemo(() => {
@@ -334,7 +378,9 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
       setIsModelModalOpen(true);
     };
 
-    const openVehicleModal = () => {
+    const openCreateVehicleModal = () => {
+      setVehicleModalMode('create');
+      setEditingVehicleId(null);
       setVehicleForm({
         modelId: activeVehicleModels[0]?.vehicleModelId ?? '',
         stationId: activeStations[0]?.stationId ?? '',
@@ -345,10 +391,46 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
         batteryCapacity: '',
         range: '',
         img: '',
+        lastMaintenance: '',
+        isActive: true,
       });
       setVehicleFormError(null);
+      setVehicleFormSuccess(null);
       resetVehicleImageState();
       setIsVehicleModalOpen(true);
+    };
+
+    const openEditVehicleModal = async (vehicleId: string) => {
+      setVehicleModalMode('edit');
+      setEditingVehicleId(vehicleId);
+      setVehicleFormError(null);
+      setVehicleFormSuccess(null);
+      resetVehicleImageState();
+      setVehicleDetailLoading(true);
+      setVehicleForm({
+        modelId: '',
+        stationId: '',
+        serialNumber: '',
+        status: 'AVAILABLE',
+        color: '',
+        batteryLevel: '',
+        batteryCapacity: '',
+        range: '',
+        img: '',
+        lastMaintenance: '',
+        isActive: true,
+      });
+      setIsVehicleModalOpen(true);
+
+      try {
+        const detail = await vehicleService.getVehicleById(vehicleId);
+        setVehicleForm(mapDetailToFormState(detail));
+      } catch (err) {
+        console.error('Không thể tải thông tin xe:', err);
+        setVehicleFormError('Không thể tải thông tin xe để chỉnh sửa. Vui lòng thử lại.');
+      } finally {
+        setVehicleDetailLoading(false);
+      }
     };
 
     const closeTypeModal = () => {
@@ -373,6 +455,10 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
       }
       setIsVehicleModalOpen(false);
       setVehicleFormError(null);
+      setVehicleFormSuccess(null);
+      setVehicleModalMode('create');
+      setEditingVehicleId(null);
+      setVehicleDetailLoading(false);
       resetVehicleImageState();
     };
 
@@ -534,6 +620,7 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
 
       setVehicleSubmitting(true);
       setVehicleFormError(null);
+      setVehicleFormSuccess(null);
 
       try {
         const payload = {
@@ -546,30 +633,61 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
           batteryLevel: parseNumberField(vehicleForm.batteryLevel, 'Mức pin'),
           batteryCapacity: parseNumberField(vehicleForm.batteryCapacity, 'Dung lượng pin'),
           range: parseNumberField(vehicleForm.range, 'Quãng đường'),
+          lastMaintenance: vehicleForm.lastMaintenance || undefined,
+          isactive: vehicleForm.isActive,
         };
 
-        await vehicleService.createVehicle(payload);
+        if (vehicleModalMode === 'edit' && editingVehicleId) {
+          const updatePayload = {
+            ...payload,
+            modelId: payload.modelId,
+            stationId: payload.stationId ?? null,
+            color: payload.color ?? null,
+            img: payload.img ?? null,
+            lastMaintenance: payload.lastMaintenance ?? null,
+          };
+
+          await vehicleService.updateVehicle(editingVehicleId, updatePayload);
+          setVehicleFormSuccess('Đã cập nhật thông tin xe thành công.');
+        } else {
+          await vehicleService.createVehicle(payload);
+          setVehicleFormSuccess('Đã thêm xe mới thành công.');
+        }
+
         await fetchReferenceData();
         await fetchHierarchyData();
-        setVehicleForm({
-          modelId: activeVehicleModels[0]?.vehicleModelId ?? '',
-          stationId: activeStations[0]?.stationId ?? '',
-          serialNumber: '',
-          status: 'AVAILABLE',
-          color: '',
-          batteryLevel: '',
-          batteryCapacity: '',
-          range: '',
-          img: '',
-        });
-        resetVehicleImageState();
-        setIsVehicleModalOpen(false);
+
+        if (vehicleModalMode === 'create') {
+          setVehicleForm({
+            modelId: activeVehicleModels[0]?.vehicleModelId ?? '',
+            stationId: activeStations[0]?.stationId ?? '',
+            serialNumber: '',
+            status: 'AVAILABLE',
+            color: '',
+            batteryLevel: '',
+            batteryCapacity: '',
+            range: '',
+            img: '',
+            lastMaintenance: '',
+            isActive: true,
+          });
+          resetVehicleImageState();
+          setIsVehicleModalOpen(false);
+        } else {
+          setImageUploadStatus('idle');
+          setImageUploadError(null);
+          setUploadedFileName(null);
+        }
       } catch (err) {
         if (err instanceof Error && err.message.includes('phải là số hợp lệ')) {
           setVehicleFormError(err.message);
         } else {
-          console.error('Failed to create vehicle:', err);
-          setVehicleFormError('Không thể tạo xe mới. Vui lòng thử lại.');
+          console.error('Failed to save vehicle:', err);
+          setVehicleFormError(
+            vehicleModalMode === 'edit'
+              ? 'Không thể cập nhật xe. Vui lòng thử lại.'
+              : 'Không thể tạo xe mới. Vui lòng thử lại.'
+          );
         }
       } finally {
         setVehicleSubmitting(false);
@@ -701,8 +819,8 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
             </button>
             <button
               type="button"
-              className="vehicle-management__action-btn"
-              onClick={openVehicleModal}
+                  className="vehicle-management__action-btn"
+                  onClick={openCreateVehicleModal}
               disabled={activeVehicleModels.length === 0}
               title={activeVehicleModels.length === 0 ? 'Cần ít nhất một mẫu xe đang hoạt động' : undefined}
             >
@@ -795,11 +913,15 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
               <div key={vehicle.vehicle_id} className="vehicle-card">
                 <div className="vehicle-card__header">
                   <div className="vehicle-card__image">
-                    {vehicle.img ? (
-                      <img src={vehicle.img} alt={vehicle.model_name} />
-                    ) : (
-                      <Car size={40} aria-hidden />
-                    )}
+                    <CloudinaryImage
+                      src={vehicle.img}
+                      alt={[vehicle.manufacturer, vehicle.model_name].filter(Boolean).join(' ') || 'Xe'}
+                      width={320}
+                      height={240}
+                      cropToSquare={false}
+                      className="vehicle-card__image-content"
+                      fallback={<Car size={40} aria-hidden />}
+                    />
                   </div>
                   <div className="vehicle-card__status">
                     {getStatusIcon(vehicle.status)}
@@ -856,11 +978,19 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
                 </div>
 
                 <div className="vehicle-card__actions">
-                  <button type="button" className="action-btn action-btn--view">
+                  <button
+                    type="button"
+                    className="action-btn action-btn--view"
+                    onClick={() => openEditVehicleModal(vehicle.vehicle_id)}
+                  >
                     <Eye size={16} aria-hidden />
                     Xem chi tiết
                   </button>
-                  <button type="button" className="action-btn action-btn--edit">
+                  <button
+                    type="button"
+                    className="action-btn action-btn--edit"
+                    onClick={() => openEditVehicleModal(vehicle.vehicle_id)}
+                  >
                     <Edit size={16} aria-hidden />
                     Sửa
                   </button>
@@ -1049,7 +1179,10 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
       )}
 
       {isVehicleModalOpen && (
-        <ManagementModal title="Thêm xe mới" onClose={closeVehicleModal}>
+        <ManagementModal
+          title={vehicleModalMode === 'edit' ? 'Cập nhật thông tin xe' : 'Thêm xe mới'}
+          onClose={closeVehicleModal}
+        >
           <form className="management-form" onSubmit={handleSubmitVehicle}>
             <div className="management-form__group">
               <label htmlFor="create-vehicle-model">Mẫu xe</label>
@@ -1082,6 +1215,7 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
                 }
                 placeholder="Ví dụ: TSL-M3-001"
                 required
+                disabled={vehicleModalMode === 'edit'}
               />
             </div>
             <div className="management-form__group">
@@ -1237,6 +1371,32 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
                 )}
               </div>
             </div>
+            <div className="management-form__group management-form__group--inline">
+              <div>
+                <label htmlFor="create-vehicle-last-maintenance">Ngày bảo trì gần nhất</label>
+                <input
+                  id="create-vehicle-last-maintenance"
+                  type="date"
+                  value={vehicleForm.lastMaintenance}
+                  onChange={(event) =>
+                    setVehicleForm((prev) => ({ ...prev, lastMaintenance: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="management-form__checkbox">
+                <label htmlFor="create-vehicle-is-active" className="checkbox-label">
+                  <input
+                    id="create-vehicle-is-active"
+                    type="checkbox"
+                    checked={vehicleForm.isActive}
+                    onChange={(event) =>
+                      setVehicleForm((prev) => ({ ...prev, isActive: event.target.checked }))
+                    }
+                  />
+                  <span>Kích hoạt xe</span>
+                </label>
+              </div>
+            </div>
             {imagePreviewSrc && (
               <div className="management-form__preview" aria-live="polite">
                 <CloudinaryImage
@@ -1254,6 +1414,16 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
                 {vehicleFormError}
               </p>
             )}
+            {vehicleDetailLoading && (
+              <p className="management-form__hint" role="status">
+                Đang tải thông tin xe...
+              </p>
+            )}
+            {vehicleFormSuccess && (
+              <p className="management-form__success" role="status">
+                {vehicleFormSuccess}
+              </p>
+            )}
             <div className="management-form__actions">
               <button
                 type="submit"
@@ -1261,10 +1431,15 @@ const VehicleManagement: React.FC<VehicleManagementProps> = ({ onBack }) => {
                 disabled={
                   vehicleSubmitting ||
                   activeVehicleModels.length === 0 ||
-                  isImageUploading
+                  isImageUploading ||
+                  vehicleDetailLoading
                 }
               >
-                {vehicleSubmitting ? 'Đang lưu...' : 'Thêm xe'}
+                {vehicleSubmitting
+                  ? 'Đang lưu...'
+                  : vehicleModalMode === 'edit'
+                    ? 'Cập nhật xe'
+                    : 'Thêm xe'}
               </button>
               <button
                 type="button"

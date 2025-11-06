@@ -4,7 +4,6 @@ import {
   Calendar,
   Clock,
   CreditCard,
-  FileText,
   Shield,
   MapPin,
   Loader2,
@@ -23,12 +22,6 @@ import './BookingModal.scss';
 
 type PaymentMethod = 'deposit' | 'full';
 
-type CustomerInfo = {
-  name: string;
-  phone: string;
-  email: string;
-};
-
 type ScheduleInfo = {
   stationId: string;
   startTime: string;
@@ -43,7 +36,6 @@ type AgreementInfo = {
 };
 
 export type BookingSummary = {
-  customerInfo: CustomerInfo;
   schedule: {
     stationId: string;
     startTime: string;
@@ -135,17 +127,8 @@ const formatDateTime = (value: string) => {
   });
 };
 
-const phoneRegex = /^(0[1-9][0-9]{8,9})$/;
-const emailRegex = /^[\w.!#$%&'*+/=?^`{|}~-]+@[\w-]+(?:\.[\w-]+)+$/;
-
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, onConfirmBooking }) => {
   const modelId = vehicle.modelId ?? vehicle.vehicle_id;
-
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    name: '',
-    phone: '',
-    email: '',
-  });
 
   const [schedule, setSchedule] = useState<ScheduleInfo>({
     stationId: '',
@@ -196,7 +179,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
 
     const defaultEnd = new Date(defaultStart.getTime() + 2 * 60 * 60 * 1000);
 
-    setCustomerInfo({ name: '', phone: '', email: '' });
     setSchedule({
       stationId: '',
       startTime: toLocalDateTimeInput(defaultStart),
@@ -335,22 +317,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
   const validateForm = () => {
     const validationErrors: ErrorState = {};
 
-    if (!customerInfo.name.trim()) {
-      validationErrors.name = 'Vui lòng nhập họ tên.';
-    }
-
-    if (!customerInfo.phone.trim()) {
-      validationErrors.phone = 'Vui lòng nhập số điện thoại.';
-    } else if (!phoneRegex.test(customerInfo.phone.trim())) {
-      validationErrors.phone = 'Số điện thoại không hợp lệ (10-11 số, bắt đầu bằng 0).';
-    }
-
-    if (!customerInfo.email.trim()) {
-      validationErrors.email = 'Vui lòng nhập email.';
-    } else if (!emailRegex.test(customerInfo.email.trim())) {
-      validationErrors.email = 'Email không đúng định dạng.';
-    }
-
     if (!schedule.stationId) {
       validationErrors.stationId = 'Vui lòng chọn trạm nhận xe.';
     }
@@ -418,11 +384,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
         endTime: apiEndTime,
         promotionCode: schedule.promotionCode.trim() || undefined,
         paymentMethod,
-        customer: {
-          name: customerInfo.name.trim(),
-          email: customerInfo.email.trim(),
-          phone: customerInfo.phone.trim(),
-        },
       };
 
       const orderResponse = await orderService.bookOrder(payload);
@@ -438,11 +399,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
       };
 
       onConfirmBooking({
-        customerInfo: {
-          name: customerInfo.name.trim(),
-          phone: customerInfo.phone.trim(),
-          email: customerInfo.email.trim(),
-        },
         schedule: {
           stationId: schedule.stationId,
           startTime: apiStartTime,
@@ -501,75 +457,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
 
         <div className="booking-modal__body">
           <section className="booking-modal__column">
-            <div className="booking-modal__panel">
-              <div className="booking-modal__panel-header">
-                <FileText size={20} />
-                <div>
-                  <h3 className="booking-modal__panel-title">Thông tin người đặt</h3>
-                  <p className="booking-modal__panel-description">Thông tin sẽ sử dụng để xác nhận đơn đặt xe và liên hệ khi cần.</p>
-                </div>
-              </div>
-
-              <div className="form-grid">
-                <label className="form-group">
-                  <span className="form-label">Họ và tên *</span>
-                  <input
-                    className={`form-input ${errors.name ? 'form-input--error' : ''}`}
-                    placeholder="Ví dụ: Nguyễn Văn A"
-                    value={customerInfo.name}
-                    onChange={(event) => {
-                      setCustomerInfo((prev) => ({ ...prev, name: event.target.value }));
-                      clearError('name');
-                    }}
-                  />
-                  {errors.name && (
-                    <span className="error-message">
-                      <AlertCircle size={14} />
-                      {errors.name}
-                    </span>
-                  )}
-                </label>
-
-                <label className="form-group">
-                  <span className="form-label">Số điện thoại *</span>
-                  <input
-                    className={`form-input ${errors.phone ? 'form-input--error' : ''}`}
-                    placeholder="0xxxxxxxxx"
-                    value={customerInfo.phone}
-                    onChange={(event) => {
-                      setCustomerInfo((prev) => ({ ...prev, phone: event.target.value }));
-                      clearError('phone');
-                    }}
-                  />
-                  {errors.phone && (
-                    <span className="error-message">
-                      <AlertCircle size={14} />
-                      {errors.phone}
-                    </span>
-                  )}
-                </label>
-
-                <label className="form-group form-group--full">
-                  <span className="form-label">Email *</span>
-                  <input
-                    className={`form-input ${errors.email ? 'form-input--error' : ''}`}
-                    placeholder="email@domain.com"
-                    value={customerInfo.email}
-                    onChange={(event) => {
-                      setCustomerInfo((prev) => ({ ...prev, email: event.target.value }));
-                      clearError('email');
-                    }}
-                  />
-                  {errors.email && (
-                    <span className="error-message">
-                      <AlertCircle size={14} />
-                      {errors.email}
-                    </span>
-                  )}
-                </label>
-              </div>
-            </div>
-
             <div className="booking-modal__panel">
               <div className="booking-modal__panel-header">
                 <MapPin size={20} />
@@ -937,22 +824,22 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                 )}
               </div>
             </div>
-
-            <div className="booking-modal__footer">
-              <button type="button" className="secondary-button" onClick={onClose} disabled={orderLoading}>
-                Hủy
-              </button>
-              <button type="button" className="primary-button" onClick={handleSubmit} disabled={isSubmitDisabled}>
-                {orderLoading ? (
-                  <>
-                    <Loader2 size={18} className="spinner" /> Đang gửi yêu cầu...
-                  </>
-                ) : (
-                  'Xác nhận & đặt xe'
-                )}
-              </button>
-            </div>
           </aside>
+        </div>
+
+        <div className="booking-modal__footer">
+          <button type="button" className="secondary-button" onClick={onClose} disabled={orderLoading}>
+            Hủy
+          </button>
+          <button type="button" className="primary-button" onClick={handleSubmit} disabled={isSubmitDisabled}>
+            {orderLoading ? (
+              <>
+                <Loader2 size={18} className="spinner" /> Đang gửi yêu cầu...
+              </>
+            ) : (
+              'Xác nhận & đặt xe'
+            )}
+          </button>
         </div>
       </div>
     </div>

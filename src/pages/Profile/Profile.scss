@@ -126,6 +126,31 @@
     margin-top: 3rem;
   }
 
+  &__wallet-cta {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__wallet-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(96, 165, 250, 0.45);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.75));
+    color: #f8fafc;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 25px -14px rgba(59, 130, 246, 0.75);
+    }
+  }
+
   &__orders-header {
     display: flex;
     align-items: flex-start;
@@ -218,6 +243,14 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: rgba(148, 163, 184, 0.85);
+  }
+
+  &__order-code {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: rgba(148, 163, 184, 0.65);
   }
 
   &__order-model {

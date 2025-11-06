@@ -8,7 +8,8 @@ import {
   LogOut,
   User,
   Package,
-  Users
+  Users,
+  Tag
 } from 'lucide-react';
 import { User as UserType } from '../../types';
 import './Sidebar.scss';
@@ -42,8 +43,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user, currentPage, onPageChange, onLo
         { id: 'vehicles', label: 'Quản lý xe', icon: <Car size={20} />, path: 'vehicles' },
         { id: 'model-selection', label: 'Chọn loại xe', icon: <Package size={20} />, path: 'model-selection' },
         { id: 'vehicle-types', label: 'Loại xe', icon: <Package size={20} />, path: 'vehicle-types' },
-        { id: 'stations', label: 'Quản lý trạm', icon: <MapPin size={20} />, path: 'stations' },
-  { id: 'bookings', label: 'Quản lý đơn', icon: <FileText size={20} />, path: 'bookings' },
+    { id: 'stations', label: 'Quản lý trạm', icon: <MapPin size={20} />, path: 'stations' },
+    { id: 'bookings', label: 'Quản lý đơn', icon: <FileText size={20} />, path: 'bookings' },
+    { id: 'promotions', label: 'Mã giảm giá', icon: <Tag size={20} />, path: 'promotions' },
         { id: 'reports', label: 'Báo cáo', icon: <BarChart3 size={20} />, path: 'reports' },
       ];
     }

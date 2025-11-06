@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './Profile.scss';
 import { User } from '../../types';
 import { orderService, BookOrderData } from '../../services/orderService';
-import { formatCurrency } from '../../utils/formatters';
 
 interface ProfileProps {
   user: User;
+  onViewWallet?: () => void;
 }
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
@@ -46,7 +46,7 @@ const STATUS_META: Record<string, { label: string; tone: 'pending' | 'info' | 's
   REJECTED: { label: 'Bị từ chối', tone: 'danger' },
 };
 
-const Profile: React.FC<ProfileProps> = ({ user }) => {
+const Profile: React.FC<ProfileProps> = ({ user, onViewWallet }) => {
   const [orders, setOrders] = useState<BookOrderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +145,14 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
           </div>
         </section>
 
+        {onViewWallet && (
+          <div className="profile__wallet-cta">
+            <button type="button" className="profile__wallet-btn" onClick={onViewWallet}>
+              Xem ví của tôi
+            </button>
+          </div>
+        )}
+
         <section className="profile__orders">
           <div className="profile__orders-header">
             <div>
@@ -167,12 +175,15 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
               {orders.map((order) => {
                 const statusKey = order.status?.toUpperCase() ?? 'UNKNOWN';
                 const statusMeta = STATUS_META[statusKey] ?? { label: statusKey, tone: 'neutral' as const };
+                const shortOrderId = order.orderId.slice(0, 8);
+                const displayOrderCode = order.orderCode ?? shortOrderId;
 
                 return (
                   <article key={order.orderId} className="profile__order-card">
                     <header className="profile__order-header">
                       <div>
-                        <span className="profile__order-id">#{order.orderId.slice(0, 8)}</span>
+                        <span className="profile__order-id">Mã đơn: {displayOrderCode}</span>
+                        {order.orderCode && <span className="profile__order-code">(ID: {shortOrderId})</span>}
                         <span className="profile__order-model">{order.vehicleModelName}</span>
                       </div>
                       <span className={`profile__status profile__status--${statusMeta.tone}`}>
@@ -190,8 +201,8 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
                         </span>
                       </div>
                       <div className="profile__order-group">
-                        <span className="profile__order-label">Giá thuê / giờ</span>
-                        <span className="profile__order-value">{formatCurrency(order.pricePerHour, 'VND', 'vi-VN')}</span>
+                        <span className="profile__order-label">Mã đặt xe</span>
+                        <span className="profile__order-value">{displayOrderCode}</span>
                       </div>
                       <div className="profile__order-group">
                         <span className="profile__order-label">Ngày đặt</span>
@@ -203,6 +214,12 @@ const Profile: React.FC<ProfileProps> = ({ user }) => {
                           <span className="profile__order-value">{order.promotionCode}</span>
                         </div>
                       )}
+                      <div className="profile__order-group">
+                        <span className="profile__order-label">Trả thực tế</span>
+                        <span className="profile__order-value">
+                          {formatDateTime(order.returnTime, { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                      </div>
                     </div>
 
                     <footer className="profile__order-footer">

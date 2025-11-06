@@ -25,11 +25,13 @@ export interface BookOrderPayload {
 
 export interface BookOrderData {
   orderId: string;
+  orderCode?: string;
   customerId: string;
   vehicleId: string;
   orderDate: string;
   startTime: string;
   endTime: string;
+  returnTime?: string | null;
   totalPrice: number;
   originalPrice: number;
   discountAmount: number | null;
@@ -41,11 +43,13 @@ export interface BookOrderData {
 
 export interface OrderRecord {
   orderId: string;
+  orderCode?: string;
   customerId: string;
   vehicleId: string;
   orderDate: string;
   startTime: string;
   endTime: string;
+  returnTime?: string | null;
   basePrice: number;
   totalPrice: number;
   promotionId: string | null;
@@ -139,6 +143,17 @@ class OrderService {
       `${this.baseURL}`,
       {
         method: 'GET',
+      }
+    );
+
+    return response;
+  }
+
+  async startOrder(orderId: string): Promise<ApiResponse<OrderRecord>> {
+    const response = await this.request<ApiResponse<OrderRecord>>(
+      `${this.baseURL}/${orderId}/start`,
+      {
+        method: 'POST',
       }
     );
 

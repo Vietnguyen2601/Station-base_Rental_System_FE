@@ -36,6 +36,7 @@ const statusMeta: Record<string, { label: string; tone: 'pending' | 'processing'
   PENDING: { label: 'Chờ xử lý', tone: 'pending' },
   CONFIRMED: { label: 'Đã xác nhận', tone: 'processing' },
   IN_PROGRESS: { label: 'Đang thực hiện', tone: 'processing' },
+  ONGOING: { label: 'Đang thuê', tone: 'processing' },
   COMPLETED: { label: 'Hoàn tất', tone: 'success' },
   CANCELLED: { label: 'Đã hủy', tone: 'danger' },
   REJECTED: { label: 'Từ chối', tone: 'danger' },
@@ -47,6 +48,8 @@ const OrderManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -67,6 +70,34 @@ const OrderManagement: React.FC = () => {
     loadOrders();
   }, [loadOrders]);
 
+  const handleStartOrder = useCallback(
+    async (orderId: string) => {
+      setProcessingOrderId(orderId);
+      setActionMessage(null);
+
+      try {
+        const response = await orderService.startOrder(orderId);
+        const updatedOrder = response.data;
+
+        if (updatedOrder) {
+          setOrders((prev) =>
+            prev.map((order) => (order.orderId === updatedOrder.orderId ? { ...order, ...updatedOrder } : order))
+          );
+        } else {
+          await loadOrders();
+        }
+
+        setActionMessage({ type: 'success', text: response.message ?? 'Đã xác nhận khách hàng nhận xe.' });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Không thể xác nhận giao xe. Vui lòng thử lại.';
+        setActionMessage({ type: 'error', text: message });
+      } finally {
+        setProcessingOrderId(null);
+      }
+    },
+    [loadOrders]
+  );
+
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -82,6 +113,7 @@ const OrderManagement: React.FC = () => {
 
       const haystack = [
         order.orderId,
+        order.orderCode ?? '',
         order.customerId,
         order.vehicleId,
         order.promotionId ?? '',
@@ -162,12 +194,19 @@ const OrderManagement: React.FC = () => {
             <option value="PENDING">Chờ xử lý</option>
             <option value="CONFIRMED">Đã xác nhận</option>
             <option value="IN_PROGRESS">Đang thực hiện</option>
+            <option value="ONGOING">Đang thuê</option>
             <option value="COMPLETED">Hoàn tất</option>
             <option value="CANCELLED">Đã hủy</option>
             <option value="REJECTED">Từ chối</option>
           </select>
         </div>
       </div>
+
+      {actionMessage && (
+        <div className={`order-management__alert order-management__alert--${actionMessage.type}`}>
+          {actionMessage.text}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="order-management__state">Đang tải dữ liệu...</div>
@@ -176,48 +215,149 @@ const OrderManagement: React.FC = () => {
       ) : filteredOrders.length === 0 ? (
         <div className="order-management__state order-management__state--empty">Không tìm thấy đơn đặt xe phù hợp.</div>
       ) : (
-        <div className="order-management__table-wrapper">
-          <table className="order-management__table">
-            <thead>
-              <tr>
-                <th>Mã đơn</th>
-                <th>Khách hàng</th>
-                <th>Phương tiện</th>
-                <th>Bắt đầu</th>
-                <th>Kết thúc</th>
-                <th>Giá gốc</th>
-                <th>Tổng tiền</th>
-                <th>Mã khuyến mãi</th>
-                <th>Ngày tạo</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => {
-                const statusKey = order.status?.toUpperCase() ?? 'UNKNOWN';
-                const meta = statusMeta[statusKey] ?? { label: statusKey, tone: 'neutral' as const };
+        <div className="order-management__list">
+          {filteredOrders.map((order) => {
+            const statusKey = order.status?.toUpperCase() ?? 'UNKNOWN';
+            const meta = statusMeta[statusKey] ?? { label: statusKey, tone: 'neutral' as const };
+            const shortId = order.orderId.slice(0, 8);
+            const displayOrderCode = order.orderCode ?? `Đơn #${shortId}`;
+            const promotionText = order.promotionId ?? '—';
+            const staffText = order.staffId ?? 'Chưa phân công';
+            const basePriceText = formatCurrencyVND(order.basePrice);
+            const totalPriceText = formatCurrencyVND(order.totalPrice);
+            const discountText = typeof order.discountAmount === 'number' ? formatCurrencyVND(order.discountAmount) : '—';
+            const originalPriceText = typeof order.originalPrice === 'number' ? formatCurrencyVND(order.originalPrice) : '—';
+            const pricePerHourText = typeof order.pricePerHour === 'number' ? formatCurrencyVND(order.pricePerHour) : '—';
+            const orderDateText = formatDateTime(order.orderDate, { dateStyle: 'short', timeStyle: 'short' });
+            const startTimeText = formatDateTime(order.startTime, { dateStyle: 'short', timeStyle: 'short' });
+            const endTimeText = formatDateTime(order.endTime, { dateStyle: 'short', timeStyle: 'short' });
+            const returnTimeText = formatDateTime(order.returnTime, { dateStyle: 'short', timeStyle: 'short' });
+            const createdAtText = formatDateTime(order.createdAt, { dateStyle: 'short', timeStyle: 'short' });
+            const updatedAtText = formatDateTime(order.updatedAt, { dateStyle: 'short', timeStyle: 'short' });
 
-                return (
-                  <tr key={order.orderId}>
-                    <td data-label="Mã đơn">{order.orderId}</td>
-                    <td data-label="Khách hàng">{order.customerId}</td>
-                    <td data-label="Phương tiện">{order.vehicleId}</td>
-                    <td data-label="Bắt đầu">{formatDateTime(order.startTime, { dateStyle: 'short', timeStyle: 'short' })}</td>
-                    <td data-label="Kết thúc">{formatDateTime(order.endTime, { dateStyle: 'short', timeStyle: 'short' })}</td>
-                    <td data-label="Giá gốc">{formatCurrencyVND(order.basePrice)}</td>
-                    <td data-label="Tổng tiền">{formatCurrencyVND(order.totalPrice)}</td>
-                    <td data-label="Khuyến mãi">{order.promotionId ?? '---'}</td>
-                    <td data-label="Ngày tạo">{formatDateTime(order.createdAt, { dateStyle: 'short', timeStyle: 'short' })}</td>
-                    <td data-label="Trạng thái">
-                      <span className={`order-management__status order-management__status--${meta.tone}`}>
-                        {meta.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+            return (
+              <article key={order.orderId} className="order-management__card">
+                <header className="order-management__card-header">
+                  <div className="order-management__identity">
+                    <h3 className="order-management__card-code">{displayOrderCode}</h3>
+                    <p className="order-management__card-id">ID hệ thống: {order.orderId}</p>
+                    <p className="order-management__card-meta">
+                      Khách hàng: <span>{order.customerId}</span>
+                    </p>
+                    {order.vehicleModelName ? (
+                      <p className="order-management__card-meta">
+                        Mẫu xe: <span>{order.vehicleModelName}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="order-management__badge-group">
+                    <span className={`order-management__status order-management__status--${meta.tone}`}>
+                      {meta.label}
+                    </span>
+                    <span
+                      className={`order-management__active order-management__active--${order.isactive ? 'active' : 'inactive'}`}
+                    >
+                      {order.isactive ? 'Đang kích hoạt' : 'Đã vô hiệu'}
+                    </span>
+                  </div>
+                </header>
+
+                <dl className="order-management__grid">
+                  <div className="order-management__cell">
+                    <dt>Mã đơn</dt>
+                    <dd>{displayOrderCode}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>ID đơn hàng</dt>
+                    <dd>{order.orderId}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Khách hàng</dt>
+                    <dd>{order.customerId}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Phương tiện</dt>
+                    <dd>{order.vehicleId}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Mẫu xe</dt>
+                    <dd>{order.vehicleModelName ?? '—'}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Nhân viên phụ trách</dt>
+                    <dd>{staffText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Mã khuyến mãi</dt>
+                    <dd>{promotionText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Ngày đặt</dt>
+                    <dd>{orderDateText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Bắt đầu</dt>
+                    <dd>{startTimeText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Kết thúc</dt>
+                    <dd>{endTimeText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Trả thực tế</dt>
+                    <dd>{returnTimeText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Giá gốc</dt>
+                    <dd>{basePriceText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Tổng tiền</dt>
+                    <dd>{totalPriceText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Giá thuê / giờ</dt>
+                    <dd>{pricePerHourText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Chiết khấu</dt>
+                    <dd>{discountText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Giá trước ưu đãi</dt>
+                    <dd>{originalPriceText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Ngày tạo</dt>
+                    <dd>{createdAtText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Cập nhật lần cuối</dt>
+                    <dd>{updatedAtText}</dd>
+                  </div>
+                  <div className="order-management__cell">
+                    <dt>Trạng thái kích hoạt</dt>
+                    <dd>{order.isactive ? 'Có' : 'Không'}</dd>
+                  </div>
+                </dl>
+
+                <footer className="order-management__card-footer">
+                  {['PENDING', 'CONFIRMED'].includes(statusKey) ? (
+                    <button
+                      type="button"
+                      className="order-management__action-btn"
+                      onClick={() => handleStartOrder(order.orderId)}
+                      disabled={processingOrderId === order.orderId}
+                    >
+                      {processingOrderId === order.orderId ? 'Đang xác nhận...' : 'Xác nhận nhận xe'}
+                    </button>
+                  ) : (
+                    <span className="order-management__action-placeholder">Không có hành động</span>
+                  )}
+                </footer>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

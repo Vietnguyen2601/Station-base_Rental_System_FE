@@ -5,6 +5,8 @@ export { vehicleService } from './vehicleService';
 export { stationService } from './stationService';
 export { accountService } from './accountService';
 export { orderService } from './orderService';
+export { promotionService } from './promotionService';
+export { walletService } from './walletService';
 export type {
   VehicleType,
   VehicleModel,
@@ -22,4 +24,6 @@ export type {
   StationByModelRecord,
 } from './stationService';
 export type { AccountRecord } from './accountService';
-export type { BookOrderPayload, BookOrderResponse } from './orderService';
+export type { BookOrderPayload, BookOrderData, OrderRecord } from './orderService';
+export type { Promotion, CreatePromotionPayload } from './promotionService';
+export type { WalletRecord } from './walletService';

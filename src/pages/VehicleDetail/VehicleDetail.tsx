@@ -499,10 +499,6 @@ const VehicleDetail: React.FC<VehicleDetailProps> = ({
                 <span className="vehicle-detail__success-value">{bookingSuccess.orderResult?.data?.orderId ?? '---'}</span>
               </div>
               <div className="vehicle-detail__success-row">
-                <span className="vehicle-detail__success-label">Khách hàng</span>
-                <span className="vehicle-detail__success-value">{bookingSuccess.customerInfo.name}</span>
-              </div>
-              <div className="vehicle-detail__success-row">
                 <span className="vehicle-detail__success-label">Trạm nhận</span>
                 <span className="vehicle-detail__success-value">
                   {bookingSuccess.vehicleSummary.selectedStation?.name ?? '---'}

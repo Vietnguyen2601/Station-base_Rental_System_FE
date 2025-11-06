@@ -27,6 +27,7 @@ export interface VehicleModel {
 
 export interface Vehicle {
   vehicleId: string;
+  modelId?: string;
   serialNumber: string;
   typeName: string;
   modelName: string;
@@ -38,9 +39,12 @@ export interface Vehicle {
   color: string;
   img: string;
   stationName: string;
+  stationId?: string | null;
   status: string;
   lastMaintenance: string;
   specs: string;
+  isactive?: boolean;
+  isActive?: boolean;
 }
 
 export interface HighestBatteryVehicle {
@@ -361,6 +365,41 @@ class VehicleService {
       return response.data;
     } catch (error) {
       console.error('Error creating vehicle:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing vehicle record
+   */
+  async updateVehicle(
+    vehicleId: string,
+    data: {
+      stationId?: string | null;
+      modelId?: string;
+      serialNumber?: string;
+      status?: string;
+      color?: string | null;
+      batteryLevel?: number | null;
+      batteryCapacity?: number | null;
+      range?: number | null;
+      img?: string | null;
+      lastMaintenance?: string | null;
+      isactive?: boolean;
+    }
+  ): Promise<Vehicle> {
+    try {
+      const response = await this.request<ApiResponse<Vehicle>>(
+        `${this.baseURL}/${vehicleId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
       throw error;
     }
   }

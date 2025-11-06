@@ -17,7 +17,9 @@ import VehicleModelSelection from './pages/Staff/VehicleModelSelection';
 import StationManagement from './pages/Staff/StationManagement';
 import VehicleDetail from './pages/VehicleDetail/VehicleDetail';
 import Profile from './pages/Profile/Profile';
+import Wallet from './pages/Profile/Wallet';
 import OrderManagement from './pages/Staff/OrderManagement';
+import PromotionManagement from './pages/Staff/PromotionManagement';
 // import Return from './pages/Return/Return';
 import { User, NewVehicleCardData } from './types';
 import authService from './services/authService';
@@ -166,6 +168,7 @@ function App() {
           {currentPage === 'model-selection' && <VehicleModelSelection onBack={() => setCurrentPage('dashboard')} />}
           {currentPage === 'stations' && <StationManagement onBack={() => setCurrentPage('dashboard')} />}
           {currentPage === 'bookings' && <OrderManagement />}
+          {currentPage === 'promotions' && <PromotionManagement />}
           {/* Add more staff pages here */}
         </StaffLayout>
       );
@@ -174,7 +177,9 @@ function App() {
     // Handle customer pages
     switch (currentPage) {
       case 'profile':
-        return <Profile user={currentUser} />;
+        return <Profile user={currentUser} onViewWallet={() => setCurrentPage('wallet')} />;
+      case 'wallet':
+        return <Wallet user={currentUser} />;
       case 'register': return <Register onBack={() => setCurrentPage('home')} />;
       case 'booking': return <Booking user={currentUser} />;
       case 'checkin': return <CheckIn user={currentUser} />;
@@ -234,6 +239,7 @@ function App() {
           {/* Simple Navigation for Demo - In real app, use React Router */}
           <nav style={{ padding: '1rem', background: '#f3f4f6', textAlign: 'center' }}>
             <button onClick={() => setCurrentPage('profile')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'profile' ? '#2563eb' : '#fff', color: currentPage === 'profile' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Hồ sơ</button>
+            <button onClick={() => setCurrentPage('wallet')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'wallet' ? '#2563eb' : '#fff', color: currentPage === 'wallet' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Ví của tôi</button>
             <button onClick={() => setCurrentPage('home')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'home' ? '#2563eb' : '#fff', color: currentPage === 'home' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Trang chủ</button>
             <button onClick={() => setCurrentPage('register')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'register' ? '#2563eb' : '#fff', color: currentPage === 'register' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đăng ký</button>
             <button onClick={() => setCurrentPage('booking')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'booking' ? '#2563eb' : '#fff', color: currentPage === 'booking' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đặt xe</button>
