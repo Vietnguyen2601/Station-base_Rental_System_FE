@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCcw, Filter, Search } from 'lucide-react';
 import './OrderManagement.scss';
 import { orderService, OrderRecord } from '../../services/orderService';
+import { accountService, AccountRecord } from '../../services/accountService';
+import { vehicleService, Vehicle } from '../../services/vehicleService';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -42,6 +44,20 @@ const statusMeta: Record<string, { label: string; tone: 'pending' | 'processing'
   REJECTED: { label: 'Từ chối', tone: 'danger' },
 };
 
+const getOrderTimestamp = (order: OrderRecord): number => {
+  const candidates = [order.createdAt, order.orderDate, order.updatedAt, order.startTime, order.endTime];
+
+  for (const value of candidates) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (!Number.isNaN(time)) {
+      return time;
+    }
+  }
+
+  return 0;
+};
+
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +66,14 @@ const OrderManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [accountLookup, setAccountLookup] = useState<Record<string, string>>({});
+  const [vehicleModelLookup, setVehicleModelLookup] = useState<Record<string, string>>({});
+  const [orderCodeSearch, setOrderCodeSearch] = useState('');
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+
+  const sortOrders = useCallback((data: OrderRecord[]) => {
+    return [...data].sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a));
+  }, []);
 
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
@@ -57,18 +81,59 @@ const OrderManagement: React.FC = () => {
 
     try {
       const response = await orderService.getAllOrders();
-      setOrders(response.data ?? []);
+      setOrders(sortOrders(response.data ?? []));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tải danh sách đơn đặt xe.';
       setError(message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sortOrders]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  const loadReferenceData = useCallback(async () => {
+    try {
+      const [accounts, vehicles] = await Promise.all([
+        accountService
+          .getAccounts()
+          .catch((err) => {
+            console.error('Không thể tải danh sách tài khoản:', err);
+            return [] as AccountRecord[];
+          }),
+        vehicleService
+          .getVehicles()
+          .catch((err) => {
+            console.error('Không thể tải danh sách phương tiện:', err);
+            return [] as Vehicle[];
+          }),
+      ]);
+
+      if (accounts.length) {
+        const accountMap = accounts.reduce<Record<string, string>>((map, account) => {
+          map[account.accountId] = account.username || account.email || account.accountId;
+          return map;
+        }, {});
+        setAccountLookup(accountMap);
+      }
+
+      if (vehicles.length) {
+        const vehicleMap = vehicles.reduce<Record<string, string>>((map, vehicle) => {
+          map[vehicle.vehicleId] = vehicle.modelName || vehicle.vehicleId;
+          return map;
+        }, {});
+        setVehicleModelLookup(vehicleMap);
+      }
+    } catch (err) {
+      console.error('Không thể tải dữ liệu tham chiếu cho đơn hàng:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReferenceData();
+  }, [loadReferenceData]);
 
   const handleStartOrder = useCallback(
     async (orderId: string) => {
@@ -81,22 +146,51 @@ const OrderManagement: React.FC = () => {
 
         if (updatedOrder) {
           setOrders((prev) =>
-            prev.map((order) => (order.orderId === updatedOrder.orderId ? { ...order, ...updatedOrder } : order))
+            sortOrders(prev.map((order) => (order.orderId === updatedOrder.orderId ? { ...order, ...updatedOrder } : order)))
           );
         } else {
           await loadOrders();
         }
 
-        setActionMessage({ type: 'success', text: response.message ?? 'Đã xác nhận khách hàng nhận xe.' });
+        setActionMessage({ type: 'success', text: response.message ?? 'Đơn hàng đã được kích hoạt.' });
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Không thể xác nhận giao xe. Vui lòng thử lại.';
+        const message = err instanceof Error ? err.message : 'Không thể kích hoạt đơn hàng. Vui lòng thử lại.';
         setActionMessage({ type: 'error', text: message });
       } finally {
         setProcessingOrderId(null);
       }
     },
-    [loadOrders]
+    [loadOrders, sortOrders]
   );
+
+  const handleVerifyOrderCode = useCallback(async () => {
+    const trimmedCode = orderCodeSearch.trim();
+    if (!trimmedCode) {
+      setActionMessage({ type: 'error', text: 'Vui lòng nhập mã đơn hàng.' });
+      return;
+    }
+
+    setActionMessage(null);
+    setIsVerifyingCode(true);
+
+    try {
+      const response = await orderService.verifyOrderCode(trimmedCode);
+      const data = response.data;
+
+      await loadOrders();
+
+      setStatusFilter('all');
+      setSearchTerm(data?.orderCode ?? trimmedCode);
+      setOrderCodeSearch('');
+
+      setActionMessage({ type: 'success', text: response.message ?? 'Đã tìm thấy đơn hàng.' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không tìm thấy đơn hàng với mã này.';
+      setActionMessage({ type: 'error', text: message });
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  }, [loadOrders, orderCodeSearch]);
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -111,11 +205,16 @@ const OrderManagement: React.FC = () => {
         return true;
       }
 
+      const customerName = accountLookup[order.customerId] ?? order.customerId;
+      const vehicleModelName = vehicleModelLookup[order.vehicleId] ?? order.vehicleModelName ?? order.vehicleId;
+
       const haystack = [
         order.orderId,
         order.orderCode ?? '',
         order.customerId,
+        customerName,
         order.vehicleId,
+        vehicleModelName,
         order.promotionId ?? '',
         order.status,
       ]
@@ -124,7 +223,7 @@ const OrderManagement: React.FC = () => {
 
       return haystack.some((value) => value.includes(normalizedSearch));
     });
-  }, [orders, searchTerm, statusFilter]);
+  }, [accountLookup, orders, searchTerm, statusFilter, vehicleModelLookup]);
 
   const stats = useMemo(() => {
     const totalOrders = orders.length;
@@ -187,6 +286,28 @@ const OrderManagement: React.FC = () => {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </div>
+        <div className="order-management__code-search">
+          <input
+            type="text"
+            placeholder="Nhập mã đơn (ví dụ: K6C5Q3)"
+            value={orderCodeSearch}
+            onChange={(event) => setOrderCodeSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleVerifyOrderCode();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="order-management__code-search-btn"
+            onClick={handleVerifyOrderCode}
+            disabled={isVerifyingCode}
+          >
+            {isVerifyingCode ? 'Đang kiểm tra...' : 'Tìm mã'}
+          </button>
+        </div>
         <div className="order-management__filters">
           <Filter size={16} />
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -221,32 +342,23 @@ const OrderManagement: React.FC = () => {
             const meta = statusMeta[statusKey] ?? { label: statusKey, tone: 'neutral' as const };
             const shortId = order.orderId.slice(0, 8);
             const displayOrderCode = order.orderCode ?? `Đơn #${shortId}`;
-            const promotionText = order.promotionId ?? '—';
-            const staffText = order.staffId ?? 'Chưa phân công';
             const basePriceText = formatCurrencyVND(order.basePrice);
             const totalPriceText = formatCurrencyVND(order.totalPrice);
-            const discountText = typeof order.discountAmount === 'number' ? formatCurrencyVND(order.discountAmount) : '—';
-            const originalPriceText = typeof order.originalPrice === 'number' ? formatCurrencyVND(order.originalPrice) : '—';
-            const pricePerHourText = typeof order.pricePerHour === 'number' ? formatCurrencyVND(order.pricePerHour) : '—';
             const orderDateText = formatDateTime(order.orderDate, { dateStyle: 'short', timeStyle: 'short' });
             const startTimeText = formatDateTime(order.startTime, { dateStyle: 'short', timeStyle: 'short' });
             const endTimeText = formatDateTime(order.endTime, { dateStyle: 'short', timeStyle: 'short' });
             const returnTimeText = formatDateTime(order.returnTime, { dateStyle: 'short', timeStyle: 'short' });
-            const createdAtText = formatDateTime(order.createdAt, { dateStyle: 'short', timeStyle: 'short' });
-            const updatedAtText = formatDateTime(order.updatedAt, { dateStyle: 'short', timeStyle: 'short' });
+            const customerName = accountLookup[order.customerId] ?? order.customerId;
+            const vehicleModelName = vehicleModelLookup[order.vehicleId] ?? order.vehicleModelName ?? order.vehicleId;
 
             return (
               <article key={order.orderId} className="order-management__card">
                 <header className="order-management__card-header">
                   <div className="order-management__identity">
                     <h3 className="order-management__card-code">{displayOrderCode}</h3>
-                    <p className="order-management__card-id">ID hệ thống: {order.orderId}</p>
-                    <p className="order-management__card-meta">
-                      Khách hàng: <span>{order.customerId}</span>
-                    </p>
-                    {order.vehicleModelName ? (
+                    {vehicleModelName ? (
                       <p className="order-management__card-meta">
-                        Mẫu xe: <span>{order.vehicleModelName}</span>
+                        Mẫu xe: <span>{vehicleModelName}</span>
                       </p>
                     ) : null}
                   </div>
@@ -273,23 +385,11 @@ const OrderManagement: React.FC = () => {
                   </div>
                   <div className="order-management__cell">
                     <dt>Khách hàng</dt>
-                    <dd>{order.customerId}</dd>
+                    <dd>{customerName}</dd>
                   </div>
                   <div className="order-management__cell">
                     <dt>Phương tiện</dt>
-                    <dd>{order.vehicleId}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Mẫu xe</dt>
-                    <dd>{order.vehicleModelName ?? '—'}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Nhân viên phụ trách</dt>
-                    <dd>{staffText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Mã khuyến mãi</dt>
-                    <dd>{promotionText}</dd>
+                    <dd>{vehicleModelName}</dd>
                   </div>
                   <div className="order-management__cell">
                     <dt>Ngày đặt</dt>
@@ -315,41 +415,17 @@ const OrderManagement: React.FC = () => {
                     <dt>Tổng tiền</dt>
                     <dd>{totalPriceText}</dd>
                   </div>
-                  <div className="order-management__cell">
-                    <dt>Giá thuê / giờ</dt>
-                    <dd>{pricePerHourText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Chiết khấu</dt>
-                    <dd>{discountText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Giá trước ưu đãi</dt>
-                    <dd>{originalPriceText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Ngày tạo</dt>
-                    <dd>{createdAtText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Cập nhật lần cuối</dt>
-                    <dd>{updatedAtText}</dd>
-                  </div>
-                  <div className="order-management__cell">
-                    <dt>Trạng thái kích hoạt</dt>
-                    <dd>{order.isactive ? 'Có' : 'Không'}</dd>
-                  </div>
                 </dl>
 
                 <footer className="order-management__card-footer">
-                  {['PENDING', 'CONFIRMED'].includes(statusKey) ? (
+                  {statusKey === 'CONFIRMED' ? (
                     <button
                       type="button"
                       className="order-management__action-btn"
                       onClick={() => handleStartOrder(order.orderId)}
                       disabled={processingOrderId === order.orderId}
                     >
-                      {processingOrderId === order.orderId ? 'Đang xác nhận...' : 'Xác nhận nhận xe'}
+                      {processingOrderId === order.orderId ? 'Đang kích hoạt...' : 'Kích hoạt đơn'}
                     </button>
                   ) : (
                     <span className="order-management__action-placeholder">Không có hành động</span>

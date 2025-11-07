@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Filter, Car, Battery, DollarSign, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { Station, Vehicle, User, BookingData, BookingConfirmation } from '../../types';
 import { mockStations, mockVehicles } from '../../utils/mockData';
+import { orderService, CreateOrderWithWalletPayload, CreateOrderWithWalletResponse } from '../../services/orderService';
 import './Booking.scss';
 
 interface BookingProps {
@@ -25,6 +26,7 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'WALLET' | 'OTHER'>('WALLET');
 
   // Filter stations based on search query
   useEffect(() => {
@@ -80,31 +82,42 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (paymentMethod === 'WALLET') {
+        // Gọi API create-with-wallet
+        const payload: CreateOrderWithWalletPayload = {
+          vehicleId: selectedVehicle.id,
+          startTime: details.startDate ? new Date(details.startDate).toISOString() : new Date().toISOString(),
+          endTime: details.endDate ? new Date(details.endDate).toISOString() : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          paymentMethod: 'WALLET',
+          promotionCode: ''
+        };
+        const res = await orderService.createOrderWithWallet(payload);
+        if (res.statusCode !== 200) throw new Error(res.message || 'Đặt xe thất bại.');
+        const data: CreateOrderWithWalletResponse = res.data;
 
-      // Create booking data
-      const booking: BookingData = {
-        userId: user.id,
-        vehicleId: selectedVehicle.id,
-        stationId: selectedStation.id,
-        startDate: details.startDate || new Date(),
-        endDate: details.endDate || new Date(Date.now() + 24 * 60 * 60 * 1000),
-        estimatedCost: details.estimatedCost || 0
-      };
-
-      // Create confirmation
-      const bookingConfirmation: BookingConfirmation = {
-        id: `BK${Date.now()}`,
-        bookingData: booking,
-        confirmationCode: `EVR${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-        status: 'confirmed'
-      };
-
-      setConfirmation(bookingConfirmation);
-      setBookingStep('confirmation');
+        // Tạo dữ liệu xác nhận đặt xe
+        const booking: BookingData = {
+          userId: user.id,
+          vehicleId: data.vehicle.vehicleId,
+          stationId: selectedStation.id,
+          startDate: new Date(data.startTime),
+          endDate: new Date(data.endTime),
+          estimatedCost: data.totalPrice
+        };
+        const bookingConfirmation: BookingConfirmation = {
+          id: data.orderId,
+          bookingData: booking,
+          confirmationCode: data.orderCode,
+          status: data.status === 'CONFIRMED' ? 'confirmed' : 'pending'
+        };
+        setConfirmation(bookingConfirmation);
+        setBookingStep('confirmation');
+      } else {
+        // Nếu có phương thức khác, xử lý tại đây (ví dụ: chuyển khoản, v.v.)
+        setError('Chỉ hỗ trợ thanh toán bằng ví ở phiên bản này.');
+      }
     } catch (err) {
-      setError('Booking failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'Booking failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -259,22 +272,38 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
   );
 
   // BookingDetails Component
-  const BookingDetails: React.FC = () => {
+  interface BookingDetailsProps {
+    station: Station | null;
+    vehicle: Vehicle | null;
+    onBack: () => void;
+    onConfirm: (details: Partial<BookingData>) => void;
+    isLoading: boolean;
+  }
+
+  const BookingDetails: React.FC<BookingDetailsProps> = ({ station, vehicle, onBack, onConfirm, isLoading }) => {
     const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 16));
     const [endDate, setEndDate] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16));
     const [duration, setDuration] = useState(24);
     const [estimatedCost, setEstimatedCost] = useState(0);
 
     useEffect(() => {
-      if (selectedVehicle) {
-        const hours = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60));
-        setDuration(hours);
-        setEstimatedCost(hours * selectedVehicle.pricePerHour);
+      if (!vehicle) {
+        return;
       }
-    }, [startDate, endDate, selectedVehicle]);
+      const startMs = new Date(startDate).getTime();
+      const endMs = new Date(endDate).getTime();
+      if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+        setDuration(0);
+        setEstimatedCost(0);
+        return;
+      }
+      const hours = Math.ceil((endMs - startMs) / (1000 * 60 * 60));
+      setDuration(hours);
+      setEstimatedCost(hours * vehicle.pricePerHour);
+    }, [startDate, endDate, vehicle]);
 
     const handleConfirm = () => {
-      handleBookingConfirm({
+      onConfirm({
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         estimatedCost
@@ -285,7 +314,7 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
       <div className="booking__step">
         <div className="booking__step-header">
           <button
-            onClick={() => setBookingStep('vehicles')}
+            onClick={onBack}
             className="booking__back-btn"
           >
             ← Back to Vehicles
@@ -299,15 +328,15 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
             <h3>Booking Summary</h3>
             <div className="booking__summary-item">
               <span>Station:</span>
-              <span>{selectedStation?.name}</span>
+                <span>{station?.name}</span>
             </div>
             <div className="booking__summary-item">
               <span>Vehicle:</span>
-              <span>{selectedVehicle?.name}</span>
+                <span>{vehicle?.name}</span>
             </div>
             <div className="booking__summary-item">
               <span>Rate:</span>
-              <span>${selectedVehicle?.pricePerHour}/hour</span>
+                <span>${vehicle?.pricePerHour}/hour</span>
             </div>
           </div>
 
@@ -336,6 +365,35 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
               />
             </div>
 
+            {/* Chọn phương thức thanh toán */}
+            <div className="booking__form-group">
+              <label>Payment Method</label>
+              <div>
+                <label style={{ marginRight: 16 }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="WALLET"
+                    checked={paymentMethod === 'WALLET'}
+                    onChange={() => setPaymentMethod('WALLET')}
+                  />{' '}
+                  Thanh toán bằng ví (trừ cọc)
+                </label>
+                {/*
+                <label>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="OTHER"
+                    checked={paymentMethod === 'OTHER'}
+                    onChange={() => setPaymentMethod('OTHER')}
+                  />{' '}
+                  Phương thức khác (chưa hỗ trợ)
+                </label>
+                */}
+              </div>
+            </div>
+
             <div className="booking__cost-breakdown">
               <h4>Cost Breakdown</h4>
               <div className="booking__cost-item">
@@ -344,7 +402,7 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
               </div>
               <div className="booking__cost-item">
                 <span>Rate:</span>
-                <span>${selectedVehicle?.pricePerHour}/hour</span>
+                <span>${vehicle?.pricePerHour}/hour</span>
               </div>
               <div className="booking__cost-item booking__cost-total">
                 <span>Estimated Total:</span>
@@ -474,7 +532,15 @@ const Booking: React.FC<BookingProps> = ({ user }) => {
         <div className="booking__content">
           {bookingStep === 'stations' && renderStationSelection()}
           {bookingStep === 'vehicles' && renderVehicleSelection()}
-          {bookingStep === 'details' && <BookingDetails />}
+          {bookingStep === 'details' && (
+            <BookingDetails
+              station={selectedStation}
+              vehicle={selectedVehicle}
+              onBack={() => setBookingStep('vehicles')}
+              onConfirm={handleBookingConfirm}
+              isLoading={isLoading}
+            />
+          )}
           {bookingStep === 'confirmation' && renderConfirmation()}
         </div>
       </div>

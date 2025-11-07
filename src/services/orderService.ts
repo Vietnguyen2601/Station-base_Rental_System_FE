@@ -1,3 +1,36 @@
+// Payload cho API create-with-wallet
+export interface CreateOrderWithWalletPayload {
+  vehicleId: string;
+  startTime: string;
+  endTime: string;
+  paymentMethod: 'WALLET';
+  promotionCode?: string;
+}
+
+// Response cho API create-with-wallet
+export interface CreateOrderWithWalletResponse {
+  orderId: string;
+  orderCode: string;
+  orderDate: string;
+  startTime: string;
+  endTime: string;
+  basePrice: number;
+  totalPrice: number;
+  depositAmount: number;
+  status: string;
+  paymentMethod: string;
+  paymentUrl: string | null;
+  vehicle: {
+    vehicleId: string;
+    licensePlate: string;
+    modelName: string;
+  };
+  contract: {
+    contractId: string;
+    contractDate: string;
+    fileUrl: string | null;
+  };
+}
 /**
  * Order Service
  * Handles booking orders for rentals
@@ -63,8 +96,41 @@ export interface OrderRecord {
   originalPrice?: number;
 }
 
+export interface VerifyOrderCodeResponse {
+  orderId: string;
+  orderCode: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleModel: string;
+  startTime: string;
+  endTime: string;
+  totalPrice: number;
+  depositPaid: number;
+  orderStatus: string;
+  isDepositPaid: boolean;
+  contractId: string;
+  contractFileUrl: string;
+}
+
 class OrderService {
   private readonly baseURL = `${API_BASE_URL}/Order`;
+  /**
+   * Đặt xe và trừ tiền cọc trong ví (thanh toán bằng ví)
+   */
+  async createOrderWithWallet(payload: CreateOrderWithWalletPayload): Promise<ApiResponse<CreateOrderWithWalletResponse>> {
+    const response = await this.request<ApiResponse<CreateOrderWithWalletResponse>>(
+      `${this.baseURL}/create-with-wallet`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    );
+    return response;
+  }
 
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
     const token = localStorage.getItem('accessToken');
@@ -154,6 +220,18 @@ class OrderService {
       `${this.baseURL}/${orderId}/start`,
       {
         method: 'POST',
+      }
+    );
+
+    return response;
+  }
+
+  async verifyOrderCode(orderCode: string): Promise<ApiResponse<VerifyOrderCodeResponse>> {
+    const response = await this.request<ApiResponse<VerifyOrderCodeResponse>>(
+      `${this.baseURL}/verify-code`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ orderCode }),
       }
     );
 

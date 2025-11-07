@@ -80,6 +80,7 @@
     display: none;
     align-items: center;
     gap: $spacing-3;
+    position: relative;
 
     @include responsive(md) {
       display: flex;
@@ -119,6 +120,46 @@
       font-size: $font-size-sm;
       color: $gray-500;
       text-transform: capitalize;
+    }
+  }
+
+  &__user-menu {
+    position: absolute;
+    top: calc(100% + $spacing-2);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-2;
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius-md;
+    box-shadow: $shadow-lg;
+    min-width: 12rem;
+    z-index: 20;
+
+    &-item {
+      @include button-base;
+      display: flex;
+      justify-content: flex-start;
+      padding: $spacing-2 $spacing-3;
+      background: transparent;
+      color: $gray-700;
+      border-radius: $border-radius-sm;
+      text-align: left;
+
+      &:hover {
+        background-color: $gray-100;
+        color: $primary-color;
+      }
+    }
+
+    &-item--danger {
+      color: $error-color;
+
+      &:hover {
+        color: $error-color;
+        background-color: rgba($error-color, 0.08);
+      }
     }
   }
 

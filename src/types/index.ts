@@ -100,6 +100,7 @@ export interface HeaderProps {
   onLogin: () => void;
   onLogout: () => void;
   onGoToProfile?: () => void;
+  onGoToWallet?: () => void;
 }
 
 export interface FooterProps {

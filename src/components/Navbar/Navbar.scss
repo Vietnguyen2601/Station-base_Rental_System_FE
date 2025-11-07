@@ -53,6 +53,26 @@
     gap: $spacing-3;
   }
 
+  &__mobile-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: $white;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
   &__btn {
     padding: 0.75rem 1.5rem;
     border-radius: 1rem;
@@ -126,6 +146,31 @@
       padding: $spacing-3 0;
     }
 
+    &__mobile-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &__actions {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: $spacing-3;
+      flex-direction: column;
+      background: rgba(15, 15, 35, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      padding: $spacing-3;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+      width: 200px;
+      z-index: 1100;
+
+      &--open {
+        display: flex;
+      }
+    }
+
     &__logo {
       gap: $spacing-2;
 
@@ -147,6 +192,7 @@
       padding: $spacing-2 $spacing-4;
       font-size: $font-size-xs;
       min-width: 80px;
+      width: 100%;
     }
   }
 }

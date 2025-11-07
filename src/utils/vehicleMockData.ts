@@ -1,5 +1,6 @@
 // Mock data for vehicle management system
 
+import { getVehicleImageByModel } from '@/assets/vehicles/vehicleImages';
 import { VehicleType, VehicleModel, Vehicle, Station } from '../types';
 
 // Mock Vehicle Types
@@ -153,7 +154,7 @@ export const mockVehicleModels: VehicleModel[] = [
 ];
 
 // Mock Vehicles
-export const mockVehicles: Vehicle[] = [
+const baseMockVehicles: Vehicle[] = [
   // Station 1 vehicles
   {
     vehicle_id: 'v-001',
@@ -166,7 +167,6 @@ export const mockVehicles: Vehicle[] = [
     range: 250,
     color: 'Pearl White',
     last_maintenance: new Date('2024-01-10'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-06-01'),
     isActive: true,
   },
@@ -181,7 +181,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Blue',
     last_maintenance: new Date('2024-01-15'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-07-01'),
     isActive: true,
   },
@@ -196,7 +195,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Black',
     last_maintenance: new Date('2024-01-05'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-08-01'),
     isActive: true,
   },
@@ -211,7 +209,6 @@ export const mockVehicles: Vehicle[] = [
     range: 400,
     color: 'Silver',
     last_maintenance: new Date('2024-01-12'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-09-01'),
     isActive: true,
   },
@@ -226,7 +223,6 @@ export const mockVehicles: Vehicle[] = [
     range: 400,
     color: 'Red',
     last_maintenance: new Date('2024-01-08'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-10-01'),
     isActive: true,
   },
@@ -241,7 +237,6 @@ export const mockVehicles: Vehicle[] = [
     range: 500,
     color: 'Midnight Silver',
     last_maintenance: new Date('2024-01-20'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-11-01'),
     isActive: true,
   },
@@ -257,7 +252,6 @@ export const mockVehicles: Vehicle[] = [
     range: 250,
     color: 'Deep Blue',
     last_maintenance: new Date('2024-01-18'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-12-01'),
     isActive: true,
   },
@@ -272,7 +266,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'White',
     last_maintenance: new Date('2024-01-22'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-12-15'),
     isActive: true,
   },
@@ -287,7 +280,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Gray',
     last_maintenance: new Date('2024-01-14'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-01-01'),
     isActive: true,
   },
@@ -303,7 +295,6 @@ export const mockVehicles: Vehicle[] = [
     range: 250,
     color: 'Pearl White',
     last_maintenance: new Date('2024-01-25'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-06-15'),
     isActive: true,
   },
@@ -318,7 +309,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Green',
     last_maintenance: new Date('2024-01-28'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-07-15'),
     isActive: true,
   },
@@ -333,7 +323,6 @@ export const mockVehicles: Vehicle[] = [
     range: 500,
     color: 'Red',
     last_maintenance: new Date('2024-01-30'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-08-15'),
     isActive: true,
   },
@@ -348,7 +337,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Blue',
     last_maintenance: new Date('2024-02-01'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-09-15'),
     isActive: true,
   },
@@ -363,7 +351,6 @@ export const mockVehicles: Vehicle[] = [
     range: 400,
     color: 'Black',
     last_maintenance: new Date('2024-01-29'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-10-15'),
     isActive: true,
   },
@@ -378,7 +365,6 @@ export const mockVehicles: Vehicle[] = [
     range: 400,
     color: 'Silver',
     last_maintenance: new Date('2024-01-27'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-11-15'),
     isActive: true,
   },
@@ -393,7 +379,6 @@ export const mockVehicles: Vehicle[] = [
     range: 250,
     color: 'Midnight Silver',
     last_maintenance: new Date('2024-01-26'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2023-12-15'),
     isActive: true,
   },
@@ -408,7 +393,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Orange',
     last_maintenance: new Date('2024-01-24'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-01-15'),
     isActive: true,
   },
@@ -423,7 +407,6 @@ export const mockVehicles: Vehicle[] = [
     range: 500,
     color: 'White',
     last_maintenance: new Date('2024-02-02'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-01-20'),
     isActive: true,
   },
@@ -438,7 +421,6 @@ export const mockVehicles: Vehicle[] = [
     range: 300,
     color: 'Yellow',
     last_maintenance: new Date('2024-01-23'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-01-25'),
     isActive: true,
   },
@@ -453,7 +435,6 @@ export const mockVehicles: Vehicle[] = [
     range: 400,
     color: 'Purple',
     last_maintenance: new Date('2024-01-21'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-01-30'),
     isActive: true,
   },
@@ -469,7 +450,6 @@ export const mockVehicles: Vehicle[] = [
     range: 450,
     color: 'Blue',
     last_maintenance: new Date('2024-01-19'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-01'),
     isActive: true,
   },
@@ -484,7 +464,6 @@ export const mockVehicles: Vehicle[] = [
     range: 395,
     color: 'White',
     last_maintenance: new Date('2024-01-17'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-02'),
     isActive: true,
   },
@@ -499,7 +478,6 @@ export const mockVehicles: Vehicle[] = [
     range: 600,
     color: 'Grabber Blue',
     last_maintenance: new Date('2024-02-03'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-03'),
     isActive: true,
   },
@@ -514,7 +492,6 @@ export const mockVehicles: Vehicle[] = [
     range: 540,
     color: 'Thunder',
     last_maintenance: new Date('2024-01-16'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-04'),
     isActive: true,
   },
@@ -529,7 +506,6 @@ export const mockVehicles: Vehicle[] = [
     range: 450,
     color: 'Moonstone Gray',
     last_maintenance: new Date('2024-01-14'),
-    img: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-05'),
     isActive: true,
   },
@@ -544,7 +520,6 @@ export const mockVehicles: Vehicle[] = [
     range: 395,
     color: 'Flame Red',
     last_maintenance: new Date('2024-01-13'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-06'),
     isActive: true,
   },
@@ -559,7 +534,6 @@ export const mockVehicles: Vehicle[] = [
     range: 600,
     color: 'Infinite Blue',
     last_maintenance: new Date('2024-01-12'),
-    img: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-07'),
     isActive: true,
   },
@@ -574,11 +548,15 @@ export const mockVehicles: Vehicle[] = [
     range: 540,
     color: 'Magnesium',
     last_maintenance: new Date('2024-01-11'),
-    img: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400',
     created_at: new Date('2024-02-08'),
     isActive: true,
   }
 ];
+
+export const mockVehicles: Vehicle[] = baseMockVehicles.map((vehicle) => ({
+  ...vehicle,
+  img: getVehicleImageByModel(vehicle.model_id),
+}));
 
 // Helper functions
 export const getVehicleTypeById = (id: string): VehicleType | undefined => {

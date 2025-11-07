@@ -1,6 +1,7 @@
 // Mock data utilities for development and testing
 
 import { Station, Vehicle, User, Rental } from '../types';
+import { getVehicleImageByName } from '@/assets/vehicles/vehicleImages';
 
 export const mockUsers: User[] = [
   {
@@ -104,7 +105,7 @@ export const mockVehicles: Vehicle[] = [
     status: 'available',
     location: 'Downtown Hub',
     pricePerHour: 25,
-    imageUrl: 'https://images.pexels.com/photos/35967/mini-cooper-auto-model-vehicle.jpg?auto=compress&cs=tinysrgb&w=400'
+    imageUrl: getVehicleImageByName('Tesla Model 3')
   },
   {
     id: '2',
@@ -114,7 +115,7 @@ export const mockVehicles: Vehicle[] = [
     status: 'available',
     location: 'Airport Terminal',
     pricePerHour: 20,
-    imageUrl: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400'
+    imageUrl: getVehicleImageByName('Nissan Leaf')
   },
   {
     id: '3',
@@ -124,7 +125,7 @@ export const mockVehicles: Vehicle[] = [
     status: 'charging',
     location: 'Downtown Hub',
     pricePerHour: 30,
-    imageUrl: 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=400'
+    imageUrl: getVehicleImageByName('BMW i3')
   },
   {
     id: '4',
@@ -133,7 +134,8 @@ export const mockVehicles: Vehicle[] = [
     batteryLevel: 78,
     status: 'rented',
     location: 'University Campus',
-    pricePerHour: 22
+    pricePerHour: 22,
+    imageUrl: getVehicleImageByName('Hyundai Kona EV')
   },
   {
     id: '5',
@@ -142,7 +144,8 @@ export const mockVehicles: Vehicle[] = [
     batteryLevel: 67,
     status: 'available',
     location: 'Shopping Mall',
-    pricePerHour: 28
+    pricePerHour: 28,
+    imageUrl: getVehicleImageByName('Volkswagen ID.4')
   },
   {
     id: '6',
@@ -151,7 +154,8 @@ export const mockVehicles: Vehicle[] = [
     batteryLevel: 88,
     status: 'available',
     location: 'Business District',
-    pricePerHour: 45
+    pricePerHour: 45,
+    imageUrl: getVehicleImageByName('Audi e-tron GT')
   }
 ];
 

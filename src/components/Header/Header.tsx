@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Car, User, LogOut } from 'lucide-react';
+import { Menu, X, Car, User } from 'lucide-react';
 import { HeaderProps, NavItem } from '../../types';
 import './Header.scss';
 
@@ -11,18 +11,33 @@ const navigationItems: NavItem[] = [
   { label: 'Support', path: '/support' },
 ];
 
-const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onGoToProfile }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onGoToProfile, onGoToWallet }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+    setIsUserMenuOpen(false);
   };
 
-  const handleGoToProfile = () => {
-    if (onGoToProfile) {
-      onGoToProfile();
-    }
+  const handleToggleUserMenu = () => {
+    setIsUserMenuOpen((prev) => !prev);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleSelectProfile = () => {
+    onGoToProfile?.();
+    setIsUserMenuOpen(false);
+  };
+
+  const handleSelectWallet = () => {
+    onGoToWallet?.();
+    setIsUserMenuOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    setIsUserMenuOpen(false);
+    onLogout();
   };
 
   return (
@@ -51,25 +66,35 @@ const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onGoToProfile 
           {/* User Actions */}
           <div className="header__actions">
             {user ? (
-              <div className="header__user">
-                <button
-                  type="button"
-                  className="header__user-info"
-                  onClick={handleGoToProfile}
-                  aria-label="Xem hồ sơ của tôi"
-                >
-                  <User className="header__user-icon" />
-                  <span className="header__user-name">{user.name ?? user.username}</span>
-                  <span className="header__user-role">({user.role})</span>
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="header__logout-btn"
-                  aria-label="Logout"
-                >
-                  <LogOut size={18} />
-                </button>
-              </div>
+              <>
+                <div className="header__user">
+                  <button
+                    type="button"
+                    className="header__user-info"
+                    onClick={handleToggleUserMenu}
+                    aria-haspopup="true"
+                    aria-expanded={isUserMenuOpen}
+                    aria-label="Mở menu người dùng"
+                  >
+                    <User className="header__user-icon" />
+                    <span className="header__user-name">{user.name ?? user.username}</span>
+                    <span className="header__user-role">({user.role})</span>
+                  </button>
+                  {isUserMenuOpen && (
+                    <div className="header__user-menu">
+                      <button type="button" className="header__user-menu-item" onClick={handleSelectProfile}>
+                        Hồ sơ của tôi
+                      </button>
+                      <button type="button" className="header__user-menu-item" onClick={handleSelectWallet}>
+                        Ví của tôi
+                      </button>
+                      <button type="button" className="header__user-menu-item header__user-menu-item--danger" onClick={handleLogoutClick}>
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <button onClick={onLogin} className="btn btn-primary">
                 Login
@@ -91,13 +116,38 @@ const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onGoToProfile 
         {isMobileMenuOpen && (
           <nav className="header__mobile-nav">
             {user && (
-              <button
-                type="button"
-                className="header__mobile-nav-item header__mobile-nav-item--action"
-                onClick={handleGoToProfile}
-              >
-                Hồ sơ của tôi
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="header__mobile-nav-item header__mobile-nav-item--action"
+                  onClick={() => {
+                    handleSelectProfile();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Hồ sơ của tôi
+                </button>
+                <button
+                  type="button"
+                  className="header__mobile-nav-item header__mobile-nav-item--action"
+                  onClick={() => {
+                    handleSelectWallet();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Ví của tôi
+                </button>
+                <button
+                  type="button"
+                  className="header__mobile-nav-item header__mobile-nav-item--action"
+                  onClick={() => {
+                    handleLogoutClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </>
             )}
             {navigationItems.map((item) => (
               <a

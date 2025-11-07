@@ -89,6 +89,14 @@ function App() {
     setCurrentPage('register');
   };
 
+  const handleGoToProfile = () => {
+    setCurrentPage('profile');
+  };
+
+  const handleGoToWallet = () => {
+    setCurrentPage('wallet');
+  };
+
   const handleViewVehicleDetail = (vehicle: NewVehicleCardData) => {
     setSelectedVehicleCard(vehicle);
     setCurrentPage('vehicle-detail');
@@ -177,7 +185,7 @@ function App() {
     // Handle customer pages
     switch (currentPage) {
       case 'profile':
-        return <Profile user={currentUser} onViewWallet={() => setCurrentPage('wallet')} />;
+        return <Profile user={currentUser} onViewWallet={handleGoToWallet} />;
       case 'wallet':
         return <Wallet user={currentUser} />;
       case 'register': return <Register onBack={() => setCurrentPage('home')} />;
@@ -228,25 +236,13 @@ function App() {
     <div className="app">
       {/* Only show header and navigation for customers */}
       {currentUser && currentUser.role === 'customer' && (
-        <>
-          <Header 
-            user={currentUser}
-            onLogin={handleLogin}
-            onLogout={handleLogout}
-            onGoToProfile={() => setCurrentPage('profile')}
-          />
-          
-          {/* Simple Navigation for Demo - In real app, use React Router */}
-          <nav style={{ padding: '1rem', background: '#f3f4f6', textAlign: 'center' }}>
-            <button onClick={() => setCurrentPage('profile')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'profile' ? '#2563eb' : '#fff', color: currentPage === 'profile' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Hồ sơ</button>
-            <button onClick={() => setCurrentPage('wallet')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'wallet' ? '#2563eb' : '#fff', color: currentPage === 'wallet' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Ví của tôi</button>
-            <button onClick={() => setCurrentPage('home')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'home' ? '#2563eb' : '#fff', color: currentPage === 'home' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Trang chủ</button>
-            <button onClick={() => setCurrentPage('register')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'register' ? '#2563eb' : '#fff', color: currentPage === 'register' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đăng ký</button>
-            <button onClick={() => setCurrentPage('booking')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'booking' ? '#2563eb' : '#fff', color: currentPage === 'booking' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Đặt xe</button>
-            <button onClick={() => setCurrentPage('checkin')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'checkin' ? '#2563eb' : '#fff', color: currentPage === 'checkin' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Nhận xe</button>
-            <button onClick={() => setCurrentPage('return')} style={{ margin: '0 0.5rem', padding: '0.5rem 1rem', background: currentPage === 'return' ? '#2563eb' : '#fff', color: currentPage === 'return' ? '#fff' : '#000', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>Trả xe</button>
-          </nav>
-        </>
+        <Header 
+          user={currentUser}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onGoToProfile={handleGoToProfile}
+          onGoToWallet={handleGoToWallet}
+        />
       )}
 
       {/* Render content - Staff/Admin layouts handle their own structure */}

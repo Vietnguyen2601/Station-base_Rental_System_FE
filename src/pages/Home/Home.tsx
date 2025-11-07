@@ -6,6 +6,13 @@ import CloudinaryImage from '../../components/common/CloudinaryImage/CloudinaryI
 import { vehicleService, VehicleModel, VehicleType } from '../../services/vehicleService';
 import { mockVehicleModels, mockVehicleTypes } from '../../utils/vehicleMockData';
 import { User, NewVehicleCardData } from '../../types';
+import {
+  DEFAULT_VEHICLE_IMAGE,
+  getVehicleImageByModel,
+  getVehicleImageByName,
+  VEHICLE_MODEL_IMAGE_MAP,
+  VEHICLE_NAME_IMAGE_MAP,
+} from '@/assets/vehicles/vehicleImages';
 import './Home.scss';
 
 interface EnhancedVehicleCardData extends NewVehicleCardData {
@@ -18,6 +25,36 @@ interface HomeProps {
   onViewVehicleDetail?: (vehicle: NewVehicleCardData) => void;
 }
 
+const resolveVehicleImage = (modelId?: string, modelName?: string, manufacturer?: string): string => {
+  if (modelId && VEHICLE_MODEL_IMAGE_MAP[modelId]) {
+    return getVehicleImageByModel(modelId);
+  }
+
+  const normalizedModelName = modelName?.trim();
+  const normalizedManufacturer = manufacturer?.trim();
+
+  if (normalizedModelName && normalizedManufacturer) {
+    const compositeName = `${normalizedManufacturer} ${normalizedModelName}`;
+    if (VEHICLE_NAME_IMAGE_MAP[compositeName]) {
+      return getVehicleImageByName(compositeName);
+    }
+  }
+
+  if (normalizedModelName && VEHICLE_NAME_IMAGE_MAP[normalizedModelName]) {
+    return getVehicleImageByName(normalizedModelName);
+  }
+
+  if (modelId) {
+    return getVehicleImageByModel(modelId);
+  }
+
+  if (normalizedModelName) {
+    return getVehicleImageByName(normalizedModelName);
+  }
+
+  return DEFAULT_VEHICLE_IMAGE;
+};
+
 const Home: React.FC<HomeProps> = ({ user, onLogin, onRegister, onViewVehicleDetail }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [vehicles, setVehicles] = useState<EnhancedVehicleCardData[]>([]);
@@ -27,48 +64,56 @@ const Home: React.FC<HomeProps> = ({ user, onLogin, onRegister, onViewVehicleDet
   const convertApiModel = (
     model: VehicleModel,
     type?: VehicleType
-  ): EnhancedVehicleCardData => ({
-    vehicle_id: model.vehicleModelId,
-    modelId: model.vehicleModelId,
-    name: `${model.manufacturer} ${model.name}`.trim(),
-    modelName: model.name,
-    manufacturer: model.manufacturer,
-    price_per_hour: model.pricePerHour ?? 0,
-    battery_capacity: 0,
-    range: 0,
-    type_name: type?.typeName ?? 'Đang cập nhật',
-    typeId: type?.vehicleTypeId,
-    typeDescription: type?.description,
-    status: 'AVAILABLE',
-    img: undefined,
-    battery_level: undefined,
-    color: undefined,
-    entityType: 'model',
-    specs: model.specs,
-  });
+  ): EnhancedVehicleCardData => {
+    const imageSrc = resolveVehicleImage(model.vehicleModelId, model.name, model.manufacturer);
+
+    return {
+      vehicle_id: model.vehicleModelId,
+      modelId: model.vehicleModelId,
+      name: `${model.manufacturer} ${model.name}`.trim(),
+      modelName: model.name,
+      manufacturer: model.manufacturer,
+      price_per_hour: model.pricePerHour ?? 0,
+      battery_capacity: 0,
+      range: 0,
+      type_name: type?.typeName ?? 'Đang cập nhật',
+      typeId: type?.vehicleTypeId,
+      typeDescription: type?.description,
+      status: 'AVAILABLE',
+      img: imageSrc,
+      battery_level: undefined,
+      color: undefined,
+      entityType: 'model',
+      specs: model.specs,
+    };
+  };
 
   const convertMockModel = (
     model: (typeof mockVehicleModels)[number],
     type?: (typeof mockVehicleTypes)[number]
-  ): EnhancedVehicleCardData => ({
-    vehicle_id: model.vehicle_model_id,
-    modelId: model.vehicle_model_id,
-    name: `${model.manufacturer} ${model.name}`.trim(),
-    modelName: model.name,
-    manufacturer: model.manufacturer,
-    price_per_hour: model.price_per_hour ?? 0,
-    battery_capacity: 0,
-    range: 0,
-    type_name: type?.type_name ?? 'Đang cập nhật',
-    typeId: type?.vehicle_type_id,
-    typeDescription: type?.description,
-    status: 'AVAILABLE',
-    img: undefined,
-    battery_level: undefined,
-    color: undefined,
-    entityType: 'model',
-    specs: model.specs,
-  });
+  ): EnhancedVehicleCardData => {
+    const imageSrc = resolveVehicleImage(model.vehicle_model_id, model.name, model.manufacturer);
+
+    return {
+      vehicle_id: model.vehicle_model_id,
+      modelId: model.vehicle_model_id,
+      name: `${model.manufacturer} ${model.name}`.trim(),
+      modelName: model.name,
+      manufacturer: model.manufacturer,
+      price_per_hour: model.price_per_hour ?? 0,
+      battery_capacity: 0,
+      range: 0,
+      type_name: type?.type_name ?? 'Đang cập nhật',
+      typeId: type?.vehicle_type_id,
+      typeDescription: type?.description,
+      status: 'AVAILABLE',
+      img: imageSrc,
+      battery_level: undefined,
+      color: undefined,
+      entityType: 'model',
+      specs: model.specs,
+    };
+  };
 
   useEffect(() => {
     let mounted = true;
