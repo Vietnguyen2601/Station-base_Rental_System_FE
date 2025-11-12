@@ -58,7 +58,11 @@ const getOrderTimestamp = (order: OrderRecord): number => {
   return 0;
 };
 
-const OrderManagement: React.FC = () => {
+interface OrderManagementProps {
+  onViewOrderDetails?: (order: OrderRecord) => void;
+}
+
+const OrderManagement: React.FC<OrderManagementProps> = ({ onViewOrderDetails }) => {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,6 +195,45 @@ const OrderManagement: React.FC = () => {
       setIsVerifyingCode(false);
     }
   }, [loadOrders, orderCodeSearch]);
+
+  const handleCompleteOrder = useCallback(
+    async (orderId: string) => {
+      setProcessingOrderId(orderId);
+      setActionMessage(null);
+
+      try {
+        const response = await orderService.updateReturnTime(orderId);
+        const updatedOrder = response.data;
+
+        if (updatedOrder) {
+          setOrders((prev) =>
+            sortOrders(
+              prev.map((order) =>
+                order.orderId === updatedOrder.orderId
+                  ? {
+                      ...order,
+                      status: updatedOrder.orderStatus ?? order.status,
+                      returnTime: updatedOrder.returnTime ?? order.returnTime,
+                      isactive: false,
+                    }
+                  : order
+              )
+            )
+          );
+        } else {
+          await loadOrders();
+        }
+
+        setActionMessage({ type: 'success', text: response.message ?? 'Đơn hàng đã được hoàn tất.' });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Không thể cập nhật thời gian trả xe. Vui lòng thử lại.';
+        setActionMessage({ type: 'error', text: message });
+      } finally {
+        setProcessingOrderId(null);
+      }
+    },
+    [loadOrders, sortOrders]
+  );
 
   const filteredOrders = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -350,6 +393,10 @@ const OrderManagement: React.FC = () => {
             const returnTimeText = formatDateTime(order.returnTime, { dateStyle: 'short', timeStyle: 'short' });
             const customerName = accountLookup[order.customerId] ?? order.customerId;
             const vehicleModelName = vehicleModelLookup[order.vehicleId] ?? order.vehicleModelName ?? order.vehicleId;
+            const canActivate = statusKey === 'CONFIRMED';
+            const canComplete = statusKey === 'ONGOING';
+            const hasDetailAction = Boolean(onViewOrderDetails);
+            const hasActions = canActivate || canComplete || hasDetailAction;
 
             return (
               <article key={order.orderId} className="order-management__card">
@@ -418,7 +465,7 @@ const OrderManagement: React.FC = () => {
                 </dl>
 
                 <footer className="order-management__card-footer">
-                  {statusKey === 'CONFIRMED' ? (
+                  {canActivate && (
                     <button
                       type="button"
                       className="order-management__action-btn"
@@ -427,9 +474,28 @@ const OrderManagement: React.FC = () => {
                     >
                       {processingOrderId === order.orderId ? 'Đang kích hoạt...' : 'Kích hoạt đơn'}
                     </button>
-                  ) : (
-                    <span className="order-management__action-placeholder">Không có hành động</span>
                   )}
+                  {canComplete && (
+                    <button
+                      type="button"
+                      className="order-management__action-btn order-management__action-btn--complete"
+                      onClick={() => handleCompleteOrder(order.orderId)}
+                      disabled={processingOrderId === order.orderId}
+                    >
+                      {processingOrderId === order.orderId ? 'Đang hoàn tất...' : 'Hoàn tất đơn'}
+                    </button>
+                  )}
+                  {hasDetailAction && (
+                    <button
+                      type="button"
+                      className="order-management__secondary-btn"
+                      onClick={() => onViewOrderDetails?.(order)}
+                      disabled={processingOrderId === order.orderId}
+                    >
+                      Xem chi tiết
+                    </button>
+                  )}
+                  {!hasActions && <span className="order-management__action-placeholder">Không có hành động</span>}
                 </footer>
               </article>
             );

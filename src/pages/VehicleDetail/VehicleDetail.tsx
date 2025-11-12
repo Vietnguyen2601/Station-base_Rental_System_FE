@@ -470,6 +470,10 @@ const VehicleDetail: React.FC<VehicleDetailProps> = ({
 
   const statusText = getStatusText();
   const statusClass = detail.status ? detail.status.toLowerCase() : 'unknown';
+  const paymentMethodLabel = bookingSuccess?.paymentMethod === 'deposit' ? 'Đặt cọc 10%' : 'Thanh toán toàn bộ';
+  const pricingSummary = bookingSuccess?.pricing;
+  const hasDiscount = (pricingSummary?.discountAmount ?? 0) > 0;
+  const discountPercent = pricingSummary ? Math.round(pricingSummary.discountRate * 100) : 0;
 
   return (
     <div className="vehicle-detail">
@@ -496,7 +500,7 @@ const VehicleDetail: React.FC<VehicleDetailProps> = ({
             <div className="vehicle-detail__success-summary">
               <div className="vehicle-detail__success-row">
                 <span className="vehicle-detail__success-label">Mã đơn</span>
-                <span className="vehicle-detail__success-value">{bookingSuccess.orderResult?.data?.orderId ?? '---'}</span>
+                <span className="vehicle-detail__success-value">{bookingSuccess.orderResult?.data?.orderCode ?? '---'}</span>
               </div>
               <div className="vehicle-detail__success-row">
                 <span className="vehicle-detail__success-label">Trạm nhận</span>
@@ -512,16 +516,37 @@ const VehicleDetail: React.FC<VehicleDetailProps> = ({
               </div>
               <div className="vehicle-detail__success-row">
                 <span className="vehicle-detail__success-label">Hình thức</span>
-                <span className="vehicle-detail__success-value">
-                  {bookingSuccess.paymentMethod === 'deposit' ? 'Đặt cọc 30%' : 'Thanh toán toàn bộ'}
-                </span>
+                <span className="vehicle-detail__success-value">{paymentMethodLabel}</span>
               </div>
               <div className="vehicle-detail__success-row">
-                <span className="vehicle-detail__success-label">Tổng chi phí</span>
-                <span className="vehicle-detail__success-value vehicle-detail__success-value--highlight">
-                  {formatCurrency(bookingSuccess.orderResult?.data?.totalPrice ?? bookingSuccess.totalAmount)}
+                <span className="vehicle-detail__success-label">Chi phí tạm tính</span>
+                <span className="vehicle-detail__success-value">
+                  {formatCurrency(pricingSummary?.baseAmount ?? bookingSuccess.orderResult?.data?.totalPrice ?? 0)}
                 </span>
               </div>
+              {hasDiscount && (
+                <div className="vehicle-detail__success-row">
+                  <span className="vehicle-detail__success-label">Ưu đãi thời lượng</span>
+                  <span className="vehicle-detail__success-value">
+                    -{formatCurrency(pricingSummary?.discountAmount ?? 0)}
+                    {discountPercent > 0 ? ` (${discountPercent}%)` : ''}
+                  </span>
+                </div>
+              )}
+              <div className="vehicle-detail__success-row">
+                <span className="vehicle-detail__success-label">Tổng sau ưu đãi</span>
+                <span className="vehicle-detail__success-value vehicle-detail__success-value--highlight">
+                  {formatCurrency(pricingSummary?.payableAmount ?? bookingSuccess.orderResult?.data?.totalPrice ?? 0)}
+                </span>
+              </div>
+              {bookingSuccess.paymentMethod === 'deposit' && (
+                <div className="vehicle-detail__success-row">
+                  <span className="vehicle-detail__success-label">Đặt cọc cần thanh toán</span>
+                  <span className="vehicle-detail__success-value">
+                    {formatCurrency(pricingSummary?.depositAmount ?? Math.round((pricingSummary?.payableAmount ?? 0) * 0.1))}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="vehicle-detail__success-actions">

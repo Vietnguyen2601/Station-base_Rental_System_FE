@@ -30,6 +30,22 @@ const toDateTimeLocal = (date: Date): string => {
   return offsetDate.toISOString().slice(0, 16);
 };
 
+const toApiDateTime = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  const hours = `${date.getHours()}`.padStart(2, '0');
+  const minutes = `${date.getMinutes()}`.padStart(2, '0');
+  const seconds = `${date.getSeconds()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+};
+
 const createDefaultFormState = (): PromotionFormState => {
   const now = new Date();
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -195,9 +211,13 @@ const PromotionManagement: React.FC = () => {
       const payload = {
         promoCode: formState.promoCode.trim().toUpperCase(),
         discountPercentage: Number(formState.discountPercentage),
-        startDate: new Date(formState.startDate).toISOString(),
-        endDate: new Date(formState.endDate).toISOString()
+        startDate: toApiDateTime(formState.startDate),
+        endDate: toApiDateTime(formState.endDate)
       };
+
+      if (!payload.startDate || !payload.endDate) {
+        throw new Error('Không thể chuyển đổi thời gian khuyến mại.');
+      }
 
       const response = await promotionService.createPromotion(payload);
       const successText = response.message ?? 'Tạo mã giảm giá thành công!';

@@ -20,9 +20,11 @@ import Profile from './pages/Profile/Profile';
 import Wallet from './pages/Profile/Wallet';
 import OrderManagement from './pages/Staff/OrderManagement';
 import PromotionManagement from './pages/Staff/PromotionManagement';
+import OrderDetail from './pages/Staff/OrderDetail';
 // import Return from './pages/Return/Return';
 import { User, NewVehicleCardData } from './types';
 import authService from './services/authService';
+import { OrderRecord } from './services/orderService';
 // import { mockUsers } from './utils/mockData';
 import './styles/main.scss';
 
@@ -31,6 +33,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState<string>('home'); // Start with home page
   const [selectedVehicleCard, setSelectedVehicleCard] = useState<NewVehicleCardData | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Check authentication status on app load
@@ -79,6 +82,7 @@ function App() {
     setCurrentUser(undefined);
     setCurrentPage('home');
     setSelectedVehicleCard(null);
+    setSelectedOrder(null);
   };
 
   const handleLogin = () => {
@@ -105,6 +109,16 @@ function App() {
   const handleBackFromVehicleDetail = () => {
     setSelectedVehicleCard(null);
     setCurrentPage('home');
+  };
+
+  const handleViewOrderDetail = (order: OrderRecord) => {
+    setSelectedOrder(order);
+    setCurrentPage('order-detail');
+  };
+
+  const handleBackFromOrderDetail = () => {
+    setSelectedOrder(null);
+    setCurrentPage('bookings');
   };
 
   // Simple page routing - In a real app, use React Router
@@ -175,7 +189,14 @@ function App() {
           {currentPage === 'vehicle-types' && <VehicleTypeManagement />}
           {currentPage === 'model-selection' && <VehicleModelSelection onBack={() => setCurrentPage('dashboard')} />}
           {currentPage === 'stations' && <StationManagement onBack={() => setCurrentPage('dashboard')} />}
-          {currentPage === 'bookings' && <OrderManagement />}
+          {currentPage === 'bookings' && <OrderManagement onViewOrderDetails={handleViewOrderDetail} />}
+          {currentPage === 'order-detail' && (
+            <OrderDetail
+              order={selectedOrder}
+              onBack={handleBackFromOrderDetail}
+              onOrderUpdated={setSelectedOrder}
+            />
+          )}
           {currentPage === 'promotions' && <PromotionManagement />}
           {/* Add more staff pages here */}
         </StaffLayout>

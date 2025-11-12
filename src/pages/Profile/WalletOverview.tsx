@@ -9,6 +9,12 @@ interface WalletOverviewProps {
   user: User;
 }
 
+interface WalletLocationState {
+  walletUpdatedAt?: number;
+  walletTopUpAmount?: number;
+  walletTopUpTransactionId?: string;
+}
+
 const formatDateTime = (value?: string | null, options?: Intl.DateTimeFormatOptions) => {
   if (!value) {
     return '—';
@@ -33,6 +39,10 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ user }) => {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [lastTopUpDetails, setLastTopUpDetails] = useState<{
+    amount?: number;
+    transactionId?: string;
+  } | null>(null);
 
   const loadWallet = useCallback(async () => {
     setIsLoading(true);
@@ -58,12 +68,17 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ user }) => {
   }, [loadWallet]);
 
   useEffect(() => {
-    const state = location.state as { walletUpdatedAt?: number } | null;
+    const state = location.state as WalletLocationState | null;
     if (state?.walletUpdatedAt) {
       setNotification('Nạp tiền thành công! Số dư của bạn đã được cập nhật.');
+      setLastTopUpDetails({
+        amount: state.walletTopUpAmount,
+        transactionId: state.walletTopUpTransactionId,
+      });
+      loadWallet();
       window.history.replaceState({}, '', location.pathname);
     }
-  }, [location]);
+  }, [location, loadWallet]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -117,6 +132,16 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ user }) => {
           {notification && (
             <div className="wallet__state wallet__state--inline wallet__state--success">
               <p>{notification}</p>
+              {lastTopUpDetails?.amount && (
+                <p>
+                  Số tiền nạp: <strong>{formatCurrency(lastTopUpDetails.amount, 'VND', 'vi-VN')}</strong>
+                </p>
+              )}
+              {lastTopUpDetails?.transactionId && (
+                <p>
+                  Mã giao dịch: <strong>{lastTopUpDetails.transactionId}</strong>
+                </p>
+              )}
             </div>
           )}
           <div className="wallet__balance-card">
@@ -139,14 +164,6 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ user }) => {
           <section className="wallet__details">
             <h2 className="wallet__section-title">Chi tiết ví</h2>
             <div className="wallet__grid">
-              <div className="wallet__cell">
-                <span className="wallet__cell-label">Mã ví</span>
-                <span className="wallet__cell-value">{wallet.walletId}</span>
-              </div>
-              <div className="wallet__cell">
-                <span className="wallet__cell-label">Tài khoản gắn với ví</span>
-                <span className="wallet__cell-value">{wallet.accountId}</span>
-              </div>
               <div className="wallet__cell">
                 <span className="wallet__cell-label">Số dư</span>
                 <span className="wallet__cell-value">{balanceDisplay}</span>

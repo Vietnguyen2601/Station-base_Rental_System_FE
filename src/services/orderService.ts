@@ -116,20 +116,49 @@ export interface VerifyOrderCodeResponse {
   contractFileUrl: string;
 }
 
+export interface UpdateReturnTimeResponse {
+  orderId: string;
+  orderCode: string;
+  returnTime: string;
+  orderStatus: string;
+  vehicleStatus: string;
+  message?: string;
+}
+
 class OrderService {
   private readonly baseURL = `${API_BASE_URL}/Order`;
   /**
    * Đặt xe và trừ tiền cọc trong ví (thanh toán bằng ví)
    */
   async createOrderWithWallet(payload: CreateOrderWithWalletPayload): Promise<ApiResponse<CreateOrderWithWalletResponse>> {
-    const response = await this.request<ApiResponse<CreateOrderWithWalletResponse>>(
-      `${this.baseURL}/create-with-wallet`,
-      {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }
-    );
-    return response;
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw new Error('Người dùng chưa đăng nhập hoặc phiên làm việc đã hết hạn.');
+    }
+
+    const response = await fetch(`${this.baseURL}/create-with-wallet`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const rawBody = await response.text();
+
+    if (!rawBody) {
+      throw new Error('Máy chủ không trả về dữ liệu.');
+    }
+
+    try {
+      const parsed = JSON.parse(rawBody) as ApiResponse<CreateOrderWithWalletResponse>;
+      return parsed;
+    } catch (error) {
+      console.error('Không thể phân tích phản hồi create-with-wallet:', error);
+      throw new Error('Dữ liệu phản hồi không đúng định dạng JSON.');
+    }
   }
 
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -219,7 +248,7 @@ class OrderService {
     const response = await this.request<ApiResponse<OrderRecord>>(
       `${this.baseURL}/${orderId}/start`,
       {
-        method: 'POST',
+        method: 'PUT',
       }
     );
 
@@ -232,6 +261,17 @@ class OrderService {
       {
         method: 'POST',
         body: JSON.stringify({ orderCode }),
+      }
+    );
+
+    return response;
+  }
+
+  async updateReturnTime(orderId: string): Promise<ApiResponse<UpdateReturnTimeResponse>> {
+    const response = await this.request<ApiResponse<UpdateReturnTimeResponse>>(
+      `${this.baseURL}/${orderId}/update-return-time`,
+      {
+        method: 'PUT',
       }
     );
 

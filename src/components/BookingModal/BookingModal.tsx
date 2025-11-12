@@ -17,7 +17,11 @@ import type { StationByModelRecord } from '../../services/stationService';
 import { vehicleService } from '../../services/vehicleService';
 import type { HighestBatteryVehicle } from '../../services/vehicleService';
 import { orderService } from '../../services/orderService';
-import type { BookOrderData } from '../../services/orderService';
+import type {
+  BookOrderData,
+  CreateOrderWithWalletPayload,
+  CreateOrderWithWalletResponse,
+} from '../../services/orderService';
 import './BookingModal.scss';
 
 type PaymentMethod = 'deposit' | 'full';
@@ -44,7 +48,13 @@ export type BookingSummary = {
     promotionCode?: string;
   };
   paymentMethod: PaymentMethod;
-  totalAmount: number;
+  pricing: {
+    baseAmount: number;
+    discountRate: number;
+    discountAmount: number;
+    payableAmount: number;
+    depositAmount: number;
+  };
   vehicleSummary: {
     baseVehicle: NewVehicleCardData;
     assignedVehicle: HighestBatteryVehicle | null;
@@ -56,7 +66,7 @@ export type BookingSummary = {
 type OrderResultSummary = {
   statusCode: number;
   message: string;
-  data: BookOrderData;
+  data: BookOrderData | CreateOrderWithWalletResponse;
 };
 
 interface BookingModalProps {
@@ -145,7 +155,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
   });
 
   const [errors, setErrors] = useState<ErrorState>({});
-  const [apiFeedback, setApiFeedback] = useState<string | null>(null);
 
   const [stations, setStations] = useState<StationByModelRecord[]>([]);
   const [stationsLoading, setStationsLoading] = useState(false);
@@ -188,7 +197,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
     setPaymentMethod('deposit');
     setAgreements({ acceptPolicy: false, confirmAccuracy: false, signature: '' });
     setErrors({});
-    setApiFeedback(null);
   }, [isOpen, vehicle.vehicle_id, vehicle.modelId]);
 
   useEffect(() => {
@@ -307,7 +315,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
   }, [schedule.endTime, schedule.startTime]);
 
   const totalAmount = useMemo(() => durationHours * (vehicle.price_per_hour ?? 0), [durationHours, vehicle.price_per_hour]);
-  const depositAmount = useMemo(() => Math.round(totalAmount * 0.3), [totalAmount]);
+  const discountMultiplier = useMemo(() => Math.max(0, Math.floor(durationHours / 12)), [durationHours]);
+  const discountRate = useMemo(() => Math.min(discountMultiplier * 0.05, 0.5), [discountMultiplier]);
+  const discountAmount = useMemo(() => Math.round(totalAmount * discountRate), [totalAmount, discountRate]);
+  const payableAmount = useMemo(() => Math.max(0, totalAmount - discountAmount), [totalAmount, discountAmount]);
+  const depositAmount = useMemo(() => Math.round(payableAmount * 0.1), [payableAmount]);
+  const discountPercent = useMemo(() => Math.round(discountRate * 100), [discountRate]);
 
   const selectedStation = useMemo(
     () => stations.find((station) => station.stationId === schedule.stationId) ?? null,
@@ -368,7 +381,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
     }
 
     try {
-      setApiFeedback(null);
       setOrderLoading(true);
 
       const apiStartTime = toApiDateTime(schedule.startTime);
@@ -378,25 +390,47 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
         throw new Error('Thời gian đặt xe không hợp lệ.');
       }
 
-      const payload = {
-        vehicleId: vehicleCandidate.vehicleId,
-        startTime: apiStartTime,
-        endTime: apiEndTime,
-        promotionCode: schedule.promotionCode.trim() || undefined,
-        paymentMethod,
-      };
+      let orderResult: OrderResultSummary;
 
-      const orderResponse = await orderService.bookOrder(payload);
+      if (paymentMethod === 'deposit') {
+        const walletPayload: CreateOrderWithWalletPayload = {
+          vehicleId: vehicleCandidate.vehicleId,
+          startTime: apiStartTime,
+          endTime: apiEndTime,
+          paymentMethod: 'WALLET',
+          promotionCode: schedule.promotionCode.trim() || undefined,
+        };
 
-      if (!orderResponse || !orderResponse.data || orderResponse.statusCode < 200 || orderResponse.statusCode >= 300) {
-        throw new Error(orderResponse?.message ?? 'Đặt xe thất bại');
+        const walletResponse = await orderService.createOrderWithWallet(walletPayload);
+
+        if (!walletResponse || !walletResponse.data || walletResponse.statusCode < 200 || walletResponse.statusCode >= 300) {
+          throw new Error(walletResponse?.message ?? 'Đặt xe thất bại');
+        }
+
+        orderResult = {
+          statusCode: walletResponse.statusCode,
+          message: walletResponse.message,
+          data: walletResponse.data,
+        };
+      } else {
+        const standardResponse = await orderService.bookOrder({
+          vehicleId: vehicleCandidate.vehicleId,
+          startTime: apiStartTime,
+          endTime: apiEndTime,
+          promotionCode: schedule.promotionCode.trim() || undefined,
+          paymentMethod,
+        });
+
+        if (!standardResponse || !standardResponse.data || standardResponse.statusCode < 200 || standardResponse.statusCode >= 300) {
+          throw new Error(standardResponse?.message ?? 'Đặt xe thất bại');
+        }
+
+        orderResult = {
+          statusCode: standardResponse.statusCode,
+          message: standardResponse.message,
+          data: standardResponse.data,
+        };
       }
-
-      const orderResult: OrderResultSummary = {
-        statusCode: orderResponse.statusCode,
-        message: orderResponse.message,
-        data: orderResponse.data,
-      };
 
       onConfirmBooking({
         schedule: {
@@ -407,7 +441,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
           promotionCode: schedule.promotionCode.trim() || undefined,
         },
         paymentMethod,
-        totalAmount,
+        pricing: {
+          baseAmount: totalAmount,
+          discountRate,
+          discountAmount,
+          payableAmount,
+          depositAmount,
+        },
         vehicleSummary: {
           baseVehicle: vehicle,
           assignedVehicle: vehicleCandidate,
@@ -418,8 +458,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
 
       onClose();
     } catch (error) {
-      console.error('Failed to book order:', error);
-      setApiFeedback('Đặt xe không thành công, vui lòng thử lại sau.');
+  console.error('Failed to book order:', error);
     } finally {
       setOrderLoading(false);
     }
@@ -528,13 +567,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                 </>
               )}
 
-              {errors.stationId && !stationsLoading && (
-                <div className="error-message error-message--inline">
-                  <AlertCircle size={14} />
-                  {errors.stationId}
-                </div>
-              )}
-
               <div className="time-grid">
                 <label className="form-group">
                   <span className="form-label">
@@ -560,13 +592,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                   />
                 </label>
               </div>
-
-              {errors.time && (
-                <div className="error-message error-message--inline">
-                  <AlertCircle size={14} />
-                  {errors.time}
-                </div>
-              )}
 
               <label className="form-group form-group--full">
                 <span className="form-label">Mã khuyến mại</span>
@@ -598,7 +623,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                   }}
                 >
                   <div>
-                    <h4>Đặt cọc 30%</h4>
+                    <h4>Đặt cọc 10%</h4>
                     <p>Giữ xe trong 12 giờ, thanh toán phần còn lại khi nhận xe.</p>
                   </div>
                   <span className="payment-option__amount">{formatCurrency(depositAmount)}</span>
@@ -616,7 +641,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                     <h4>Thanh toán toàn bộ</h4>
                     <p>Đảm bảo xe luôn sẵn sàng ở trạng thái tốt nhất khi bạn nhận.</p>
                   </div>
-                  <span className="payment-option__amount">{formatCurrency(totalAmount)}</span>
+                  <span className="payment-option__amount">{formatCurrency(payableAmount)}</span>
                 </button>
               </div>
             </div>
@@ -643,12 +668,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                     />
                     Tôi đã đọc và đồng ý với điều khoản sử dụng và chính sách bảo mật của hệ thống.
                   </label>
-                  {errors.acceptPolicy && (
-                    <span className="error-message">
-                      <AlertCircle size={14} />
-                      {errors.acceptPolicy}
-                    </span>
-                  )}
                 </li>
                 <li>
                   <label className="checkbox-label">
@@ -662,12 +681,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                     />
                     Tôi xác nhận các thông tin cung cấp là chính xác và chịu trách nhiệm khi có sai lệch.
                   </label>
-                  {errors.confirmAccuracy && (
-                    <span className="error-message">
-                      <AlertCircle size={14} />
-                      {errors.confirmAccuracy}
-                    </span>
-                  )}
                 </li>
               </ul>
 
@@ -684,12 +697,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                     clearError('signature');
                   }}
                 />
-                {errors.signature && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.signature}
-                  </span>
-                )}
               </label>
             </div>
           </section>
@@ -796,9 +803,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                       <span>Thời lượng</span>
                       <span>{durationHours > 0 ? `${durationHours} giờ` : '--'}</span>
                     </li>
-                    <li className="summary-row summary-row--emphasis">
+                    <li className="summary-row">
                       <span>Tổng tạm tính</span>
                       <span>{formatCurrency(totalAmount)}</span>
+                    </li>
+                    {discountAmount > 0 && (
+                      <li className="summary-row">
+                        <span>Ưu đãi thời lượng</span>
+                        <span>-{formatCurrency(discountAmount)} ({discountPercent}%)</span>
+                      </li>
+                    )}
+                    <li className="summary-row summary-row--emphasis">
+                      <span>Tổng sau ưu đãi</span>
+                      <span>{formatCurrency(payableAmount)}</span>
                     </li>
                   </ul>
 
@@ -806,22 +823,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, vehicle, o
                     <CreditCard size={16} />
                     {paymentMethod === 'deposit' ? (
                       <span>
-                        Đặt cọc cần thanh toán: <strong>{formatCurrency(depositAmount)}</strong>
+                        Đặt cọc cần thanh toán (10%): <strong>{formatCurrency(depositAmount)}</strong>
+                        {discountAmount > 0 ? ` • Tổng sau ưu đãi: ${formatCurrency(payableAmount)}` : ''}
                       </span>
                     ) : (
                       <span>
-                        Thanh toán toàn bộ: <strong>{formatCurrency(totalAmount)}</strong>
+                        Thanh toán toàn bộ (đã áp dụng ưu đãi): <strong>{formatCurrency(payableAmount)}</strong>
                       </span>
                     )}
                   </div>
                 </div>
 
-                {apiFeedback && (
-                  <div className="booking-modal__alert booking-modal__alert--error">
-                    <AlertCircle size={18} />
-                    {apiFeedback}
-                  </div>
-                )}
               </div>
             </div>
           </aside>

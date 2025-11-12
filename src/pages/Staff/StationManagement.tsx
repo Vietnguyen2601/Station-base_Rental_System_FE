@@ -344,7 +344,6 @@ const StationManagement: React.FC<StationManagementProps> = ({ onBack }) => {
           ) : (
             <ul className="station-management__items">
               {stations.map((station) => {
-                const isActive = station.isactive;
                 const vehicleCount = station.vehicles?.length ?? 0;
                 return (
                   <li key={station.stationId}>
@@ -358,9 +357,6 @@ const StationManagement: React.FC<StationManagementProps> = ({ onBack }) => {
                           <MapPin size={16} aria-hidden />
                           <span>{station.name}</span>
                         </div>
-                        <span className={`station-item__status station-item__status--${isActive ? 'active' : 'inactive'}`}>
-                          {isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                        </span>
                       </div>
                       <p className="station-item__address">{station.address}</p>
                       <div className="station-item__meta">
@@ -475,14 +471,7 @@ const StationManagement: React.FC<StationManagementProps> = ({ onBack }) => {
           </div>
 
           <div className="station-management__card">
-            <div className="station-management__card-header">
-              <h2>Chi tiết trạm</h2>
-              {selectedStation && (
-                <span className={`station-management__status station-management__status--${selectedStation.isactive ? 'active' : 'inactive'}`}>
-                  {selectedStation.isactive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                </span>
-              )}
-            </div>
+
 
             {selectedStation ? (
               <div className="station-details">

@@ -1,5 +1,10 @@
 import axios, { AxiosError } from 'axios';
 import { API_BASE_URL } from '../config/api';
+import {
+  buildVNPayReturnUrl,
+  PendingWalletVNPayTransaction,
+  WALLET_VNPAY_PENDING_TRANSACTION_KEY,
+} from '../constants/wallet';
 
 interface ApiResponse<T> {
   statusCode: number;
@@ -18,6 +23,7 @@ export interface WalletRecord {
 interface CreateVNPayUrlPayload {
   walletId: string;
   amount: number;
+  returnUrl: string;
 }
 
 interface CreateVNPayUrlResponse {
@@ -27,6 +33,20 @@ interface CreateVNPayUrlResponse {
   status: string;
   paymentUrl: string;
   message: string;
+  returnUrl?: string;
+}
+
+interface VNPayCallbackResult {
+  walletId?: string;
+  transactionId?: string;
+  amount?: number;
+  paymentStatus?: string;
+  status?: string;
+  transactionStatus?: string;
+  responseCode?: string;
+  walletBalance?: number;
+  isSuccess?: boolean;
+  message?: string;
 }
 
 class WalletServiceError extends Error {
@@ -42,6 +62,59 @@ class WalletServiceError extends Error {
 
 class WalletService {
   private readonly baseURL = `${API_BASE_URL}/Wallet`;
+
+  private readPendingVNPayTransaction(): PendingWalletVNPayTransaction | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      const rawValue = window.localStorage.getItem(WALLET_VNPAY_PENDING_TRANSACTION_KEY);
+      if (!rawValue) {
+        return null;
+      }
+
+      const parsed = JSON.parse(rawValue) as PendingWalletVNPayTransaction | null;
+
+      if (!parsed || typeof parsed !== 'object') {
+        window.localStorage.removeItem(WALLET_VNPAY_PENDING_TRANSACTION_KEY);
+        return null;
+      }
+
+      if (!parsed.walletId || typeof parsed.walletId !== 'string') {
+        window.localStorage.removeItem(WALLET_VNPAY_PENDING_TRANSACTION_KEY);
+        return null;
+      }
+
+      return parsed;
+    } catch (error) {
+      console.warn('[walletService] Unable to parse VNPay pending transaction.', error);
+      return null;
+    }
+  }
+
+  private writePendingVNPayTransaction(transaction: PendingWalletVNPayTransaction): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        WALLET_VNPAY_PENDING_TRANSACTION_KEY,
+        JSON.stringify(transaction)
+      );
+    } catch (error) {
+      console.warn('[walletService] Unable to persist VNPay pending transaction.', error);
+    }
+  }
+
+  private removePendingVNPayTransaction(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.removeItem(WALLET_VNPAY_PENDING_TRANSACTION_KEY);
+  }
 
   private getAuthHeaders() {
     const token = localStorage.getItem('accessToken');
@@ -117,10 +190,11 @@ class WalletService {
     }
   }
 
-  async createVNPayUrl(walletId: string, amount: number): Promise<string> {
+  async createVNPayUrl(walletId: string, amount: number): Promise<CreateVNPayUrlResponse> {
     const payload: CreateVNPayUrlPayload = {
       walletId,
       amount,
+      returnUrl: buildVNPayReturnUrl(),
     };
 
     console.info('[walletService] Creating VNPay URL with payload:', payload);
@@ -140,15 +214,22 @@ class WalletService {
 
       console.info('[walletService] VNPay URL response:', response.data);
 
-      const paymentUrl = response.data?.data?.paymentUrl;
+      const responsePayload = response.data?.data;
 
-      console.info('[walletService] Extracted payment URL:', paymentUrl);
+      console.info('[walletService] VNPay response payload:', responsePayload);
 
-      if (!paymentUrl) {
+      if (!responsePayload?.paymentUrl) {
         throw new Error('Không nhận được liên kết thanh toán VNPay.');
       }
 
-      return paymentUrl;
+      this.writePendingVNPayTransaction({
+        walletId,
+        amount: responsePayload.amount ?? amount,
+        transactionId: responsePayload.transactionId,
+        createdAt: Date.now(),
+      });
+
+      return responsePayload;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const responseData = error.response?.data as ApiResponse<CreateVNPayUrlResponse> | undefined;
@@ -156,8 +237,8 @@ class WalletService {
         if (responseData) {
           console.warn('[walletService] VNPay URL error response:', responseData);
 
-          const fallbackUrl = responseData.data?.paymentUrl;
-          if (fallbackUrl) {
+          const fallbackPayload = responseData.data;
+          if (fallbackPayload?.paymentUrl) {
             console.warn(
               '[walletService] Proceeding with payment URL despite error status.',
               {
@@ -166,7 +247,14 @@ class WalletService {
               }
             );
 
-            return fallbackUrl;
+            this.writePendingVNPayTransaction({
+              walletId,
+              amount: fallbackPayload.amount ?? amount,
+              transactionId: fallbackPayload.transactionId,
+              createdAt: Date.now(),
+            });
+
+            return fallbackPayload;
           }
         }
       }
@@ -175,18 +263,32 @@ class WalletService {
     }
   }
 
-  async sendVNPayCallback(params: Record<string, string>): Promise<void> {
+  async sendVNPayCallback(params: Record<string, string>): Promise<ApiResponse<VNPayCallbackResult>> {
     try {
-      await axios.post<ApiResponse<unknown>>(`${this.baseURL}/vnpay-callback`, params, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...this.getAuthHeaders(),
-        },
-        withCredentials: true,
-      });
+      const response = await axios.post<ApiResponse<VNPayCallbackResult>>(
+        `${this.baseURL}/vnpay-callback`,
+        params,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...this.getAuthHeaders(),
+          },
+          withCredentials: true,
+        }
+      );
+
+      return response.data;
     } catch (error) {
       throw this.handleAxiosError(error);
     }
+  }
+
+  getPendingVNPayTransaction(): PendingWalletVNPayTransaction | null {
+    return this.readPendingVNPayTransaction();
+  }
+
+  clearPendingVNPayTransaction(): void {
+    this.removePendingVNPayTransaction();
   }
 }
 

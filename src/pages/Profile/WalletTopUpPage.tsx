@@ -57,13 +57,27 @@ const WalletTopUpPage: React.FC<WalletTopUpPageProps> = ({ user }) => {
       return;
     }
 
+    if (numericAmount < MIN_TOP_UP_AMOUNT) {
+      setError(`Số tiền tối thiểu cho một lần nạp là ${formatCurrency(MIN_TOP_UP_AMOUNT, 'VND', 'vi-VN')}.`);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const paymentUrl = await walletService.createVNPayUrl(wallet.walletId, numericAmount);
-      console.log('VNPay paymentUrl:', paymentUrl);
-      window.location.href = paymentUrl;
+      const response = await walletService.createVNPayUrl(wallet.walletId, numericAmount);
+      if (!response.paymentUrl) {
+        throw new Error('Không nhận được liên kết thanh toán VNPay từ máy chủ.');
+      }
+
+      console.info('[WalletTopUpPage] Redirecting to VNPay with transaction:', {
+        walletId: wallet.walletId,
+        transactionId: response.transactionId,
+        amount: response.amount,
+      });
+
+      window.location.href = response.paymentUrl;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể khởi tạo giao dịch VNPay.';
       setError(message);
